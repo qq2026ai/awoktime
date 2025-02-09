@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.App.Starting" parent="Theme.SplashScreen.IconBackground">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/minilogo</item>
+        <item name="windowSplashScreenBackground">@color/screen</item>
+        <item name="postSplashScreenTheme">@style/Theme.Subject_segmentation_compose</item>
+<!--        <item name="android:windowActionBar">false</item>-->
+<!--        <item name="android:windowNoTitle">true</item>-->
+<!--        <item name="android:windowBackground">@drawable/aa1</item>-->
+<!--        <item name="android:actionBarStyle">@null</item>-->
+
+    </style>
+
+
+</resources>

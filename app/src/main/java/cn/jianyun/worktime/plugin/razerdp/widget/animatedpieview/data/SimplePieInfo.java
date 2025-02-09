@@ -1,0 +1,111 @@
+package cn.jianyun.worktime.plugin.razerdp.widget.animatedpieview.data;
+
+import android.graphics.Bitmap;
+import android.graphics.Typeface;
+
+import androidx.annotation.Nullable;
+
+/**
+ * Created by 大灯泡 on 2017/11/7.
+ */
+
+public class SimplePieInfo implements IPieInfo {
+    private String uuid;
+    private double value;
+    private int color;
+    private String desc;
+    private PieOption mPieOption;
+
+    public SimplePieInfo() {
+        mPieOption = new PieOption();
+    }
+
+    public SimplePieInfo(String uuid,double value, int color, String desc) {
+        this.uuid = uuid;
+        this.value = value;
+        this.color = color;
+        this.desc = desc;
+        mPieOption = new PieOption();
+    }
+
+    public void setValue(float value) {
+        this.value = value;
+    }
+
+    public void setColor(int color) {
+        this.color = color;
+    }
+
+    public void setDesc(String desc) {
+        this.desc = desc;
+    }
+
+    public SimplePieInfo setLabel(Bitmap bm) {
+        mPieOption.setLabelIcon(bm);
+        return this;
+    }
+
+    public SimplePieInfo setDefaultSelected(boolean defaultSelected) {
+        mPieOption.setDefaultSelected(defaultSelected);
+        return this;
+    }
+
+    @Override
+    public double getValue() {
+        return value;
+    }
+
+    @Override
+    public int getColor() {
+        return color;
+    }
+
+    @Override
+    public String getDesc() {
+        return desc;
+    }
+
+
+    public SimplePieInfo setIconWidth(float iconWidth) {
+        mPieOption.setIconWidth(iconWidth);
+        return this;
+    }
+
+
+    public SimplePieInfo setIconHeight(float iconHeight) {
+        mPieOption.setIconHeight(iconHeight);
+        return this;
+    }
+
+    public SimplePieInfo setIconScaledWidth(float iconScaledWidth) {
+        mPieOption.setIconScaledWidth(iconScaledWidth);
+        return this;
+    }
+
+
+    public SimplePieInfo setIconScaledHeight(float iconScaledHeight) {
+        mPieOption.setIconScaledHeight(iconScaledHeight);
+        return this;
+    }
+
+    public SimplePieInfo setTypeFace(Typeface mTypeFace) {
+        mPieOption.setTypeFace(mTypeFace);
+        return this;
+    }
+
+
+    public String getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
+    @Nullable
+    @Override
+    public PieOption getPieOption() {
+        return mPieOption;
+    }
+
+}
