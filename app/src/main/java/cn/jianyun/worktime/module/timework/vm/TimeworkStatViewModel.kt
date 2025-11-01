@@ -155,6 +155,7 @@ class TimeworkStatViewModel @Inject constructor(
             if(it.mode == "day"){
                 statData.dayCount = MyDataTool.plusNum(statData.dayCount, "1").toString();
                 statData.dayMoney = MyDataTool.plusPriceWithString(statData.dayMoney, it.amount)
+                statData.dayHour = MyDataTool.plusTime(statData.dayHour, it.fetchBaseHour())
 
                 normalDays.add(it.day)
                 totalDays.add(it.day)
@@ -235,6 +236,8 @@ class TimeworkStatViewModel @Inject constructor(
                 if(it.mode == "day"){
                     item.value = MyDataTool.plusPriceWithString(item.value, it.amount)
                     pushMapValue(tempSalaryDataMap, "日结", it.amount.toFloatData(2))
+                    pushMapValue(tempSalaryTimeMap, "日结", it.fetchBaseHour().timeToFloat(decimal = 2))
+                    timeItem.value = MyDataTool.plusPriceWithString(timeItem.value, it.fetchBaseHour().timeToFloat(2).toString())
                 }
             }
 

@@ -11,6 +11,7 @@ data class TimeworkStatData(
     var overSalary: String = "",
     var dayCount: String = "",
     var dayMoney: String = "",
+    var dayHour: String = "",
     var awardMoney: String = "",
     var fineMoney: String = "",
 
@@ -20,9 +21,8 @@ data class TimeworkStatData(
 
 ){
 
-
     fun fetchTotalHour(): String {
-        return MyDataTool.plusTime(baseHour, overHour);
+        return MyDataTool.plusTime(MyDataTool.plusTime(baseHour, overHour), dayHour);
     }
 
     fun fetchValue(value: String, defaultValue: String = "-"): String {

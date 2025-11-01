@@ -34,6 +34,7 @@ import cn.jianyun.worktime.ui.component.nav.TwoColumnView
 import cn.jianyun.worktime.ui.component.nav.VerticalRow
 import cn.jianyun.worktime.ui.theme.PrimaryColor
 import cn.jianyun.worktime.ui.theme.ThemeColor
+import cn.jianyun.worktime.util.toPage
 import com.alibaba.fastjson2.toJSONString
 
 @Composable
@@ -48,7 +49,7 @@ fun WebDAVUserManageView(navHostController: NavHostController) {
     }) {
         viewModel.datalist.forEach{
             GroupView(verticalPadding = 15.dp, modifier= Modifier.clickable {
-                navHostController.navigateTo(WebDAVRouter.UserEdit.route, bundleOf("model" to it.toJSONString()))
+                toPage(navHostController,WebDAVRouter.UserEdit.route, bundleOf("model" to it.toJSONString()))
             }) {
                 TwoColumnView {
                     Column {
@@ -71,13 +72,13 @@ fun WebDAVUserManageView(navHostController: NavHostController) {
                     }
                     
                     TagView(tag = "查看", color= PrimaryColor, big=true) {
-                        navHostController.navigateTo(Router.WebDAV.route, bundleOf("model" to it.toJSONString()))
+                        toPage(navHostController, Router.WebDAV.route, bundleOf("model" to it.toJSONString()))
                     }
                 }
             }
         }
         LongCancelButton("添加") {
-            navHostController.navigateTo(WebDAVRouter.UserEdit.route, bundleOf("model" to WebDAVUser().toJSONString()))
+            toPage(navHostController, WebDAVRouter.UserEdit.route, bundleOf("model" to WebDAVUser().toJSONString()))
         }
 
         if(viewModel.formType.isForm("doc")){

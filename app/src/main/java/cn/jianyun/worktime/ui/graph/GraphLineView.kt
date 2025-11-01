@@ -56,7 +56,6 @@ fun GraphLineView(monthStatData: LineGraphData){
                 } }
                 step = monthStatData.step()
             }
-            mlog("xData", monthStatData.unit, monthStatData.datalist.size,  monthStatData.fetchXData(), monthStatData.fetchYData())
         }
 
         val bottomAxisValueFormatter = CartesianValueFormatter { x, _, _ ->

@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.preferencesDataStoreFile
 import cn.jianyun.worktime.api.BaseApi
+import cn.jianyun.worktime.api.ConfigApi
 import cn.jianyun.worktime.api.ShareApi
 import cn.jianyun.worktime.api.TraceApi
 import dagger.Module
@@ -51,7 +52,8 @@ object AppModule {
         logger.level = HttpLoggingInterceptor.Level.BODY
         return OkHttpClient.Builder()
             .addInterceptor(logger)
-            .readTimeout(Duration.ofSeconds(1000L))
+            .readTimeout(Duration.ofSeconds(50L))
+            .connectTimeout(Duration.ofSeconds(50L))
             .build()
     }
 
@@ -85,6 +87,16 @@ object AppModule {
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build().create(ShareApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideConfigApiService(okHttpClient: OkHttpClient): ConfigApi {
+        return Retrofit.Builder()
+            .baseUrl("https://api.potal.cn")
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build().create(ConfigApi::class.java)
     }
 
 

@@ -49,9 +49,16 @@ data class PieGraphItem(
     val color: String = "",
     var percent: Float = 0f
 ) {
-    fun label(i: Int): String {
-        if(i <= 2 || percent >= 8){
-            return showName() + " " + MyDataTool.getShownPrice(percent.toString(), 0) + "%"
+    fun label(i: Int, all: List<PieGraphItem>): String {
+        val showData = showName() + " " + MyDataTool.getShownPrice(percent.toString(), 0) + "%"
+        if(i <= 1){
+            return showData
+        }
+        if(all[i - 1].percent > 10){
+            return showData
+        }
+        if(percent > 10){
+            return showData
         }
         return ""
     }

@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
 import cn.jianyun.worktime.model.FormType
 import cn.jianyun.worktime.module.timework.model.TimeworkData
 import cn.jianyun.worktime.module.timework.vm.TimeworkMasterViewModel
@@ -20,7 +21,7 @@ import cn.jianyun.worktime.ui.component.nav.DeleteText
 
 
 @Composable
-fun MakeRestView(viewModel: TimeworkMasterViewModel){
+fun MakeRestView(viewModel: TimeworkMasterViewModel, navHostController: NavHostController){
 
     val editWorkItem = viewModel.editWorkItem
 

@@ -35,12 +35,19 @@ fun TimeworkHeaderStatView(viewModel: TimeworkMasterViewModel) {
 
         if(viewModel.monthStatModel.dayCount == "" || viewModel.monthStatModel.baseHour != "" || viewModel.monthStatModel.overHour != ""){
             statNumView(title = "正班工时", fontSize, value = MyDataTool.getShownTime(viewModel.monthStatModel.baseHour, true), modifier=Modifier.weight(1f))
-            statNumView(title = "加班工时", fontSize, value = MyDataTool.getShownTime(viewModel.monthStatModel.overHour, true), modifier=Modifier.weight(1f))
+            if(viewModel.monthStatModel.overHour != ""){
+                statNumView(title = "加班工时", fontSize, value = MyDataTool.getShownTime(viewModel.monthStatModel.overHour, true), modifier=Modifier.weight(1f))
+            }
         }
         if(viewModel.monthStatModel.dayMoney != ""){
             statNumView(title = "日结收入", fontSize, value = viewModel.monthStatModel.dayMoney.withUnit(2,"元"), modifier=Modifier.weight(1f))
+            if(viewModel.monthStatModel.dayHour != ""){
+                statNumView(title = "日结工时", fontSize, value = MyDataTool.getShownTime(viewModel.monthStatModel.dayHour, true), modifier=Modifier.weight(1f))
+            }
         }
-        statNumView(title = "补扣金额", fontSize, value = MyDataTool.withUnit(viewModel.monthStatModel.awardMoney, 2,"元"), modifier=Modifier.weight(1f))
+        if(viewModel.monthStatModel.awardMoney != ""){
+            statNumView(title = "补扣金额", fontSize, value = MyDataTool.withUnit(viewModel.monthStatModel.awardMoney, 2,"元"), modifier=Modifier.weight(1f))
+        }
         statNumView(title = "本月收入", fontSize, value = MyDataTool.withUnit(viewModel.monthStatModel.fetchTotalMoney(), 2,"元"), modifier=Modifier.weight(1f))
     }
 

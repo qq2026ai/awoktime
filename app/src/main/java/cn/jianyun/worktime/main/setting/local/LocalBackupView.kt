@@ -25,6 +25,7 @@ import cn.jianyun.worktime.ui.component.form.SwitchItemView
 import cn.jianyun.worktime.ui.component.nav.CenterSmallTipText
 import cn.jianyun.worktime.ui.component.nav.LeadingHintView
 import cn.jianyun.worktime.ui.component.nav.PageView
+import cn.jianyun.worktime.ui.theme.ThemeColor
 import com.darkrockstudios.libraries.mpfilepicker.DirectoryPicker
 import kotlinx.coroutines.launch
 
@@ -39,24 +40,35 @@ fun LocalBackupView(navHostController: NavHostController) {
                 Text(MyFileUtil.readDirRelativePath(viewModel.localPath))
             }
 
-            LinkText(label = "恭喜，你已经成功设置好本地备份目录，即便app卸载，你依然可以从此目录恢复数据，为了避免本地备份文件占用过多本地存储，你可以设置是否自动备份，以及每个功能模块下的备份文件数据，超过指定数量，历史备份会自动删除喔")
+//            LinkText(label = "恭喜，你已经成功设置好本地备份目录，即便app卸载，你依然可以从此目录恢复数据，为了避免本地备份文件占用过多本地存储，你可以设置是否自动备份，以及每个功能模块下的备份文件数据，超过指定数量，历史备份会自动删除喔")
+            LinkText(label = "恭喜，你已经成功设置好本地备份目录，即便app卸载，你依然可以从此目录恢复数据")
             Blank()
             Blank()
 
-            GroupView {
-                SwitchItemView(label = "自动备份", value = viewModel.localBackupConfig.autoBackup, onValueChange = {
-                    viewModel.localBackupConfig = viewModel.localBackupConfig.copy(autoBackup = it)
-                    viewModel.saveLocalInfo()
-                })
-                InputNumberView(label = "最多保留备份文件数量", minValue=1, maxValue=50, unit = "个", value = viewModel.localBackupConfig.autoFile, onValueChange = {
-                    viewModel.localBackupConfig = viewModel.localBackupConfig.copy(autoFile = it)
-                    viewModel.saveLocalInfo()
-                })
-            }
+//            GroupView {
+//                SwitchItemView(label = "自动备份", value = viewModel.localBackupConfig.autoBackup, onValueChange = {
+//                    viewModel.localBackupConfig = viewModel.localBackupConfig.copy(autoBackup = it)
+//                    viewModel.saveLocalInfo()
+//                })
+//                InputNumberView(label = "最多保留备份文件数量", minValue=1, maxValue=50, unit = "个", value = viewModel.localBackupConfig.autoFile, onValueChange = {
+//                    viewModel.localBackupConfig = viewModel.localBackupConfig.copy(autoFile = it)
+//                    viewModel.saveLocalInfo()
+//                })
+//            }
 
-            CenterSmallTipText(text = "切换备份目录") {
+//            LongOkButton(label= "全量备份") {
+//                viewModel.saveAll()
+//            }
+
+            CenterSmallTipText(text = "切换备份目录", color = ThemeColor) {
                 viewModel.formType = FormType("toggleTip")
             }
+
+//            LongCancelButton("清空备份目录") {
+//                viewModel.localPath = ""
+//                viewModel.localBackupConfig = LocalBackupConfig(path="")
+//                viewModel.saveLocalInfo()
+//            }
         }
         else{
 

@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.viewModelScope
+import androidx.navigation.NavHostController
 import cn.jianyun.worktime.api.FestivalData
 import cn.jianyun.worktime.hilt.respo.BaseRepository
 import cn.jianyun.worktime.model.FormType
@@ -30,6 +31,7 @@ import cn.jianyun.worktime.util.dateStr
 import cn.jianyun.worktime.util.isOk
 import cn.jianyun.worktime.util.mlog
 import cn.jianyun.worktime.util.parseDate
+import cn.jianyun.worktime.util.toVipPage
 import com.alibaba.fastjson2.JSON
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -54,6 +56,7 @@ class TimeworkMasterViewModel @Inject constructor(
     var pageType by mutableStateOf(FormType(type="home"))
     var deleteType by mutableStateOf(FormType(type=""))
     var currentProjectName by mutableStateOf("")
+    var readVersion by mutableStateOf("")
 
     var datalist by mutableStateOf(listOf<TimeworkData>())
     var projects by mutableStateOf(listOf<TimeworkProject>())
@@ -224,8 +227,6 @@ class TimeworkMasterViewModel @Inject constructor(
             awardDatas = timeworkService.awardDataDao.listByPeriod(currentProjectId, beginDay, endDay)
             workDatas = timeworkService.dataDao.listByPeriod(currentProjectId, beginDay, endDay)
 
-            mlog("workDatas", workDatas)
-            workDatas.forEach { mlog(it) }
             var result = mutableMapOf<String, TimeworkShownData>()
             //基于每一天计算工时数据
             var t = beginDay
@@ -268,7 +269,6 @@ class TimeworkMasterViewModel @Inject constructor(
                     }
                     if(it.mode == "time" && it.endTime != "") {
 
-
                         item.hour = MyDataTool.plusTime(item.hour, it.fetchBaseHour())
                         newItem.baseSalaryInfo = salaryInfoMap.get(it.salaryUuid) ?: ""
                         newItem.baseSalaryPrice = salaryMap.get(it.salaryUuid) ?: 0f
@@ -280,9 +280,11 @@ class TimeworkMasterViewModel @Inject constructor(
                     }
                     if(it.mode == "day"){
                         item.dayMoney = MyDataTool.plusPriceWithString(item.dayMoney, it.amount)
+                        item.hour = MyDataTool.plusTime(item.hour, it.fetchTotalHour())
 
                         monthStatResult.dayCount = MyDataTool.plusNum(monthStatResult.dayCount, "1").toString()
                         monthStatResult.dayMoney = MyDataTool.plusPriceWithString(monthStatResult.dayMoney, it.amount)
+                        monthStatResult.dayHour = MyDataTool.plusTime(monthStatResult.dayHour, it.fetchBaseHour())
                     }
 
                     if(it.mode == "leave"){
@@ -415,7 +417,7 @@ class TimeworkMasterViewModel @Inject constructor(
                 }
                 baseRepository.playTap()
                 clear()
-                baseRepository.reload()
+                reloadData(true)
             }
         }
         else{
@@ -440,7 +442,7 @@ class TimeworkMasterViewModel @Inject constructor(
                     workItem.day = getCurrentDateStr()
                     timeworkService.dataDao.insert(workItem)
                     baseRepository.playTap()
-                    baseRepository.reload()
+                    reloadData(true)
                 }
             }
         }
@@ -473,7 +475,7 @@ class TimeworkMasterViewModel @Inject constructor(
                 }
                 baseRepository.playTap()
                 clear()
-                baseRepository.reload()
+                reloadData(true)
             }
         }
         else{
@@ -491,7 +493,7 @@ class TimeworkMasterViewModel @Inject constructor(
                     awardItem.day = getCurrentDateStr()
                     timeworkService.awardDataDao.insert(awardItem)
                     baseRepository.playTap()
-                    baseRepository.reload()
+                    reloadData(true)
                 }
             }
         }
@@ -537,8 +539,8 @@ class TimeworkMasterViewModel @Inject constructor(
                     timeworkService.dataDao.insert(editWorkItem)
                 }
                 clear()
-                baseRepository.reload()
                 formType = FormType()
+                reloadData(true)
             }
         }
         else{
@@ -557,8 +559,8 @@ class TimeworkMasterViewModel @Inject constructor(
                 else{
                     timeworkService.dataDao.update(editWorkItem)
                 }
-                baseRepository.reload()
                 formType = FormType()
+                reloadData(true)
             }
         }
 
@@ -582,7 +584,7 @@ class TimeworkMasterViewModel @Inject constructor(
                     timeworkService.awardDataDao.insert(editAwardItem)
                 }
                 clear()
-                baseRepository.reload()
+                reloadData(true)
                 formType = FormType()
             }
         }
@@ -596,12 +598,10 @@ class TimeworkMasterViewModel @Inject constructor(
                 else{
                     timeworkService.awardDataDao.update(editAwardItem)
                 }
-                baseRepository.reload()
+                reloadData(true)
                 formType = FormType()
             }
         }
-
-
     }
 
     fun fetchShownData(date: Date): TimeworkShownData {
@@ -619,7 +619,7 @@ class TimeworkMasterViewModel @Inject constructor(
             timeworkService.dataDao.delete(editWorkItem)
             deleteType = FormType()
             formType = FormType()
-            baseRepository.reload()
+            reloadData(true)
         }
     }
 
@@ -637,7 +637,7 @@ class TimeworkMasterViewModel @Inject constructor(
                 }
             }
             clear()
-            baseRepository.reload()
+            reloadData(true)
             deleteType = FormType()
         }
 
@@ -648,7 +648,7 @@ class TimeworkMasterViewModel @Inject constructor(
             timeworkService.awardDataDao.delete(editAwardItem)
             deleteType = FormType()
             formType = FormType()
-            baseRepository.reload()
+            reloadData(true)
         }
     }
 
@@ -673,7 +673,7 @@ class TimeworkMasterViewModel @Inject constructor(
             timeworkService.setProjectId(it.uuid)
             currentProjectId = it.uuid
             currentProjectName = it.name
-            baseRepository.reload()
+            reloadData(true)
         }
     }
 }

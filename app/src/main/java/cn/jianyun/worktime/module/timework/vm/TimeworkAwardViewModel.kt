@@ -36,6 +36,7 @@ class TimeworkAwardViewModel @Inject constructor(
     var showAll by mutableStateOf(false)
 
     init {
+        mlog("initAward")
         reload()
     }
 
@@ -88,7 +89,7 @@ class TimeworkAwardViewModel @Inject constructor(
                 }
                 baseRepository.reload()
                 formType = FormType()
-                navHostController.popBackStack()
+                goBack(navHostController)
             }
             else{
                 baseRepository.toast(msg)
@@ -120,7 +121,7 @@ class TimeworkAwardViewModel @Inject constructor(
             resetForm()
             baseRepository.reload()
             reload()
-            navHostController.popBackStack()
+            goBack(navHostController)
         }
     }
 

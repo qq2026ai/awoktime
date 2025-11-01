@@ -90,7 +90,6 @@ fun GroupLineView(gid: Int, monthStatDatas: List<LineGraphData>){
             }
         }
         val marker = rememberMarker(valueFormatter = { ctx, dlist ->
-            mlog("start", )
             if(dlist.isNotEmpty() && dlist[0] is LineCartesianLayerMarkerTarget){
                 val target = dlist[0] as LineCartesianLayerMarkerTarget
                 "${monthStatDatas[0].fetchMarker(target.points[0].entry.x.toInt())}\n" +

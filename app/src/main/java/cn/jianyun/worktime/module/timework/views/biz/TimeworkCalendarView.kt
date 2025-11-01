@@ -1,6 +1,8 @@
 package cn.jianyun.worktime.module.timework.views.biz
 
 import android.content.res.Resources.Theme
+import android.media.AudioAttributes
+import android.media.SoundPool
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -18,14 +20,18 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import cn.jianyun.worktime.R
 import cn.jianyun.worktime.module.timework.vm.TimeworkMasterViewModel
 import cn.jianyun.worktime.ui.component.nav.MonthChooseView
 import cn.jianyun.worktime.util.Blank
@@ -43,6 +49,7 @@ import cn.jianyun.worktime.ui.component.nav.IconView
 import cn.jianyun.worktime.ui.component.nav.TwoColumnView
 import cn.jianyun.worktime.ui.theme.DeleteColor
 import cn.jianyun.worktime.ui.theme.ThemeColor
+import cn.jianyun.worktime.util.VibrateUtil
 import cn.qsfty.worktime.component.CalendarHeaderView
 import cn.qsfty.worktime.component.VerticalView
 import java.util.Date
@@ -51,6 +58,28 @@ import java.util.Date
 
 @Composable
 fun TimeworkCalendarView(viewModel: TimeworkMasterViewModel){
+
+//    val context = LocalContext.current
+//    val soundPool = remember {
+//        SoundPool.Builder()
+//            .setMaxStreams(1)
+//            .setAudioAttributes(
+//                AudioAttributes.Builder()
+//                    .setUsage(AudioAttributes.USAGE_GAME)
+//                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+//                    .build()
+//            )
+//            .build()
+//    }
+//
+//    val soundId = remember { soundPool.load(context, R.raw.click_6, 1) }
+//
+//    DisposableEffect(Unit) {
+//        onDispose {
+//            soundPool.release()
+//        }
+//    }
+
     return GroupView(horizonPadding = 2.dp) {
         CalendarHeaderView(viewModel.appConfig.isMondayFirst())
         TimeworkCalendarBodyView(viewModel){ date ->
@@ -60,6 +89,7 @@ fun TimeworkCalendarView(viewModel: TimeworkMasterViewModel){
             Row(modifier= Modifier
                 .mainBg(6.dp)
                 .clickable {
+                    VibrateUtil.vibrate(viewModel.baseRepository.context)
                     viewModel.currentDate = MyDateTool.getStartDayOfMonth(
                         MyDateTool.gapDay(
                             MyDateTool.getStartDayOfMonth(viewModel.currentDate), -5
@@ -81,6 +111,7 @@ fun TimeworkCalendarView(viewModel: TimeworkMasterViewModel){
                 Text("今天", modifier= Modifier
                     .mainBg(6.dp)
                     .clickable {
+                        VibrateUtil.vibrate(viewModel.baseRepository.context)
                         if(MyDateTool.toChineseMonthString(viewModel.currentDate) != MyDateTool.toChineseMonthString(Date())) {
                             viewModel.chooseDates.clear()
                         }
@@ -95,6 +126,7 @@ fun TimeworkCalendarView(viewModel: TimeworkMasterViewModel){
             Row(modifier= Modifier
                 .mainBg(6.dp)
                 .clickable {
+                    VibrateUtil.vibrate(viewModel.baseRepository.context)
                     viewModel.currentDate = MyDateTool.getStartDayOfMonth(
                         MyDateTool.gapDay(
                             MyDateTool.getLastDayOfMonth(viewModel.currentDate), 5
@@ -127,6 +159,7 @@ fun TimeworkCalendarBodyView(viewModel: TimeworkMasterViewModel,  content: @Comp
                         Column(modifier = Modifier
                             .tap {
                                 if (it.day != "") {
+                                    VibrateUtil.vibrate(viewModel.baseRepository.context)
                                     viewModel.makeCurrentDate(it.date)
                                 }
                             }

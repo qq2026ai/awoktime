@@ -4,6 +4,7 @@ package cn.jianyun.worktime.module.timework.model
 
 import androidx.compose.ui.graphics.Color
 import androidx.room.Entity
+import androidx.room.Ignore
 import androidx.room.PrimaryKey
 import cn.jianyun.worktime.module.base.model.BaseRoomModel
 import cn.jianyun.worktime.module.base.vm.BaseViewModel

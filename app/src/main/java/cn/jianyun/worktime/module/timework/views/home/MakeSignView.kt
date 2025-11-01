@@ -6,6 +6,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
 import cn.jianyun.worktime.model.FormType
 import cn.jianyun.worktime.module.timework.vm.TimeworkMasterViewModel
 import cn.jianyun.worktime.util.Blank
@@ -23,11 +24,11 @@ import cn.jianyun.worktime.ui.component.form.TimePickerItemView3
 import cn.jianyun.worktime.ui.component.nav.DeleteText
 import cn.jianyun.worktime.ui.component.nav.SmallTipText
 import cn.jianyun.worktime.ui.theme.DeleteColor
+import cn.jianyun.worktime.util.ifv
 
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MakeSignView(viewModel: TimeworkMasterViewModel){
+fun MakeSignView(viewModel: TimeworkMasterViewModel, navHostController: NavHostController){
 
     val editWorkItem = viewModel.editWorkItem
 
@@ -45,6 +46,7 @@ fun MakeSignView(viewModel: TimeworkMasterViewModel){
                 TimePeriodPickerItemView3(
                     label = "正班时长",
                     value = editWorkItem.baseSalaryTime,
+                    minuteStep = viewModel.appConfig.fetchMinuteStep(),
                     onValueChange = {
                         viewModel.editWorkItem = editWorkItem.copy(baseSalaryTime = it)
                     }
@@ -65,6 +67,7 @@ fun MakeSignView(viewModel: TimeworkMasterViewModel){
             if(editWorkItem.overTime) {
                 TimePeriodPickerItemView3(
                     label = "加班时长",
+                    minuteStep = viewModel.appConfig.fetchMinuteStep(),
                     value = editWorkItem.overSalaryTime,
                     onValueChange = {
                         viewModel.editWorkItem = editWorkItem.copy(overSalaryTime = it)
@@ -85,14 +88,49 @@ fun MakeSignView(viewModel: TimeworkMasterViewModel){
 
         }
         if(editWorkItem.mode == "day"){
-            InputNumberView(label = "日结工资", value = editWorkItem.amount, unit="元", onValueChange = {
+            InputNumberView(label = "日结工资", value = editWorkItem.amount, unit="元", decimal = true, onValueChange = {
                 viewModel.editWorkItem = editWorkItem.copy(amount = it)
             })
+
+            if(viewModel.appConfig.needDayTime){
+                TimePickerItemView3(
+                    label = "上班时间",
+                    allowEmpty = true,
+                    minuteStep = viewModel.appConfig.fetchMinuteStep(),
+                    placeholder = "选填",
+                    value = editWorkItem.beginTime,
+                    onValueChange = {
+                        viewModel.editWorkItem = editWorkItem.copy(beginTime = it)
+                    }
+                )
+                TimePickerItemView3(
+                    label = "下班时间",
+                    allowEmpty = true,
+                    minuteStep = viewModel.appConfig.fetchMinuteStep(),
+                    placeholder = "选填",
+                    value = editWorkItem.endTime,
+                    onValueChange = {
+                        viewModel.editWorkItem = editWorkItem.copy(endTime = it)
+                    }
+                )
+                TimePeriodPickerItemView3(
+                    label = "休息时长",
+                    allowEmpty = true,
+                    minuteStep = viewModel.appConfig.fetchMinuteStep(),
+                    placeholder = "选填",
+                    value = editWorkItem.restTime,
+                    onValueChange = {
+                        viewModel.editWorkItem = editWorkItem.copy(restTime = it)
+                    }
+                )
+            }
+
         }
 
         if(editWorkItem.mode == "time"){
             TimePickerItemView3(
                 label = "上班时间",
+                minuteStep = viewModel.appConfig.fetchMinuteStep(),
                 value = editWorkItem.beginTime,
                 onValueChange = {
                     viewModel.editWorkItem = editWorkItem.copy(beginTime = it)
@@ -100,6 +138,7 @@ fun MakeSignView(viewModel: TimeworkMasterViewModel){
             )
             TimePickerItemView3(
                 label = "下班时间",
+                minuteStep = viewModel.appConfig.fetchMinuteStep(),
                 value = editWorkItem.endTime,
                 onValueChange = {
                     viewModel.editWorkItem = editWorkItem.copy(endTime = it)
@@ -108,6 +147,7 @@ fun MakeSignView(viewModel: TimeworkMasterViewModel){
             TimePeriodPickerItemView3(
                 label = "休息时长",
                 allowEmpty = true,
+                minuteStep = viewModel.appConfig.fetchMinuteStep(),
                 value = editWorkItem.restTime,
                 onValueChange = {
                     viewModel.editWorkItem = editWorkItem.copy(restTime = it)

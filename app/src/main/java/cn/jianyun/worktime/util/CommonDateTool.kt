@@ -20,6 +20,10 @@ fun String.parseDate(): Date {
     return MyDateTool.parseDate(this)
 }
 
+fun String.parseDateTime(): Date {
+    return MyDateTool.parseDateTimeString(this)
+}
+
 fun String.parseChineseMonth(): Date {
     return MyDateTool.parse(this, MyDateTool.PATTERN_MONTH_CHINESE)
 }

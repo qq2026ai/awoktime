@@ -39,10 +39,8 @@ import cn.jianyun.worktime.ui.component.form.LongCancelButton
 import cn.jianyun.worktime.ui.component.form.SegmentPickerView
 import cn.jianyun.worktime.ui.component.nav.CenterColumn
 import cn.jianyun.worktime.ui.component.nav.FullRow
-import cn.jianyun.worktime.ui.graph.GraphBarView
-import cn.jianyun.worktime.ui.graph.GroupBarView
-import cn.jianyun.worktime.ui.graph.test.BarTestView
 import cn.jianyun.worktime.ui.theme.ThemeColor
+import cn.jianyun.worktime.util.toPage
 import com.alibaba.fastjson2.toJSONString
 
 @Composable
@@ -60,7 +58,7 @@ fun TimeworkStatView(navHostController: NavHostController) {
     Column {
 
         CenterColumn(paddingBottom = 10.dp) {
-            SegmentPickerView(value = viewModel.currentMode, padding = 10.dp, width=50.dp, options = SelectUtil.DATE_CHOOSE_TYPES, onChange = {
+            SegmentPickerView(value = viewModel.currentMode, padding = 10.dp, width=60.dp, options = SelectUtil.DATE_CHOOSE_TYPES, onChange = {
                 viewModel.currentMode = it
                 viewModel.reloadData()
             })
@@ -93,8 +91,8 @@ fun TimeworkStatView(navHostController: NavHostController) {
                 if(statData.dayCount != ""){
                     FullRow{
                         statNumView(title = "日结次数", value = MyDataTool.withUnit(statData.dayCount, "次"), modifier=Modifier.weight(1f))
+                        statNumView(title = "日结工时", value = MyDataTool.getShownTime(statData.dayHour, true), modifier=Modifier.weight(1f))
                         statNumView(title = "日结收入", value =  MyDataTool.withUnit(statData.dayMoney, 2,"元"), modifier=Modifier.weight(1f))
-                        statNumView(title = "", value = "", modifier=Modifier.weight(1f))
                     }
                 }
 
@@ -109,14 +107,14 @@ fun TimeworkStatView(navHostController: NavHostController) {
                     FullRow{
                         statNumView(title = "正班收入", value = MyDataTool.withUnit(statData.baseSalary, 2,"元"), modifier=Modifier.weight(1f))
                         statNumView(title = "加班收入", value =  MyDataTool.withUnit(statData.overSalary, 2,"元"), modifier=Modifier.weight(1f))
-                        statNumView(title = "工时收入", value = MyDataTool.withUnit(statData.fetchTotalSalary(),2, "元"), modifier=Modifier.weight(1f))
+                        statNumView(title = "时薪收入", value = MyDataTool.withUnit(statData.fetchTotalSalary(),2, "元"), modifier=Modifier.weight(1f))
                     }
                 }
                 Blank()
                 FullRow{
                     statNumView(title = "正班天数", value = MyDataTool.withUnit(statData.normalDay.toString(),0,  "天"), modifier=Modifier.weight(1f))
                     statNumView(title = "加班天数", value = MyDataTool.withUnit(statData.overDay.toString(), 0, "天"), modifier=Modifier.weight(1f))
-                    statNumView(title = "总天数", value = MyDataTool.withUnit(statData.totalDay.toString(), 0, "天"), modifier=Modifier.weight(1f))
+                    statNumView(title = "出勤天数", value = MyDataTool.withUnit(statData.totalDay.toString(), 0, "天"), modifier=Modifier.weight(1f))
                 }
                 Blank()
                 FullRow{
@@ -144,10 +142,8 @@ fun TimeworkStatView(navHostController: NavHostController) {
                 Blank()
             }
 
-
-//            BarTestView()
-            LongCancelButton("查看数据明细") {
-                navHostController.navigateTo(TimeworkRouter.TimeworkDetailData.route, bundleOf("model" to viewModel.realRangeDate().toJSONString()))
+            LongCancelButton("查看数据明细及导出") {
+                toPage(navHostController,TimeworkRouter.TimeworkDetailData.route, bundleOf("model" to viewModel.realRangeDate().toJSONString()))
             }
 
         }
@@ -160,6 +156,6 @@ fun TimeworkStatView(navHostController: NavHostController) {
 private fun statNumView(title: String, value: String, modifier: Modifier=Modifier){
     Column(modifier=modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Text(title, color= Color.Gray, fontSize = 12.sp)
-        Text(value, color= ThemeColor, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+        Text(value, color= ThemeColor, fontSize = 15.sp, fontWeight = FontWeight. Medium)
     }
 }

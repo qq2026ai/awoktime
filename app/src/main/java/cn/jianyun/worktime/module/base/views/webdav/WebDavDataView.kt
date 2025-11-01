@@ -60,6 +60,7 @@ fun WebDavDataView(navHostController: NavHostController, arguments: Bundle?){
             viewModel.loadData(MyWebdavTool.getParentPath(viewModel.currentPath))
         }
     }) {
+
         SmallTipText(text = "${viewModel.currentPath}")
         if(viewModel.msg == ""){
             viewModel.files.forEach{
@@ -142,7 +143,7 @@ class WebDavViewModel @Inject constructor(
     }
 
     fun isRootPath():Boolean {
-        return currentPath == defaultPath
+        return currentPath == defaultPath || currentPath == defaultPath + "/"
     }
 
     fun loadData(path: String){

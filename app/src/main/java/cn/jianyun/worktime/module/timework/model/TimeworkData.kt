@@ -7,6 +7,7 @@ import androidx.room.Ignore
 import androidx.room.PrimaryKey
 import cn.jianyun.worktime.module.base.model.BaseRoomModel
 import cn.jianyun.worktime.util.MyDataTool
+import cn.jianyun.worktime.util.TimeModel
 import cn.jianyun.worktime.util.showTime
 import cn.jianyun.worktime.util.timeToFloat
 
@@ -66,6 +67,7 @@ data class TimeworkData(
     var totalSalaryPrice: Float = 0f
 
 
+
     override fun isValid(): String {
 
         if(mode == "hour") {
@@ -90,6 +92,13 @@ data class TimeworkData(
             if(amount == ""){
                 return "日结工资不能为空"
             }
+
+            if(beginTime != "" && endTime != "" && restTime != ""){
+                if(MyDataTool.minusTime(MyDataTool.minusTime(endTime, beginTime, true), restTime, false).timeToFloat(1) < 0){
+                    return "休息时长不能大于上班时长"
+                }
+            }
+
         }
         if(mode == "time") {
             if(beginTime == ""){
@@ -115,11 +124,21 @@ data class TimeworkData(
                 return baseSalaryTime
             }
         }
-        if(mode == "time"){
+        else if(mode == "time"){
             if(endTime != "" && beginTime != ""){
                 var t = MyDataTool.minusTime(endTime, beginTime, true)
                 var t2 = MyDataTool.minusTime(t, restTime, false)
                 return t2
+            }
+        }
+        else if(mode == "day"){
+            if(endTime != "" && beginTime != ""){
+                var t = MyDataTool.minusTime(endTime, beginTime, true)
+                var t2 = MyDataTool.minusTime(t, restTime, false)
+                return t2
+            }
+            else if(baseSalaryTime != ""){
+                return baseSalaryTime
             }
         }
         return ""
@@ -147,11 +166,11 @@ data class TimeworkData(
     }
 
     fun fetchBaseMoney(price: Float): String {
-        return MyDataTool.multipyWithString(MyDataTool.timeToDecimal(fetchBaseHour()), price.toString())
+        return TimeModel.getTimeMoneyString(fetchBaseHour(), price);
     }
 
     fun fetchOverMoney(price:Float): String {
-        return MyDataTool.multipyWithString(MyDataTool.timeToDecimal(fetchOverHour()), price.toString());
+        return TimeModel.getTimeMoneyString(fetchOverHour(), price);
     }
 
     fun fetchAliasName(): String {

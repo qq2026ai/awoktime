@@ -1,5 +1,7 @@
 package cn.jianyun.worktime.util;
 
+import android.util.TimeUtils;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
@@ -40,7 +42,7 @@ public class MyDataTool {
     }
 
     public static Double toDouble(Object obj) {
-        return toDouble(obj, null);
+        return toDouble(obj, 0d);
     }
 
     public static Double toDouble(Object obj, Double defVal) {

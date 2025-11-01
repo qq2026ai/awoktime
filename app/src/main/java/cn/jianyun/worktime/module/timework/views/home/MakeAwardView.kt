@@ -25,6 +25,7 @@ import cn.jianyun.worktime.ui.component.nav.LeadingHintView
 import cn.jianyun.worktime.ui.component.nav.SmallLinkText
 import cn.jianyun.worktime.ui.component.nav.SmallTipText
 import cn.jianyun.worktime.ui.theme.DeleteColor
+import cn.jianyun.worktime.util.toPage
 import com.alibaba.fastjson2.toJSONString
 
 @Composable
@@ -39,8 +40,7 @@ fun MakeAwardView(viewModel: TimeworkMasterViewModel, navHostController: NavHost
         LeadingHintView("选择一项${editAwardItem.typeName()}") {
             SmallLinkText("添加${editAwardItem.typeName()}") {
                 viewModel.formType = FormType()
-                navHostController.navigateTo(TimeworkRouter.TimeworkAwardEdit.route,
-                    bundleOf("model" to  TimeworkAward(type=editAwardItem.awardType).toJSONString()))
+                toPage(navHostController, TimeworkRouter.TimeworkAwardEdit.route, bundleOf("model" to  TimeworkAward(type=editAwardItem.awardType).toJSONString()))
             }
         }
 
@@ -56,7 +56,7 @@ fun MakeAwardView(viewModel: TimeworkMasterViewModel, navHostController: NavHost
             SmallTipText(text = "当前补扣项为空，建议先添加一个再来操作", color= DeleteColor)
         }
 
-        InputNumberView(label = "${editAwardItem.typeName()}", value = editAwardItem.awardValue, unit="元", onValueChange = {
+        InputNumberView(label = "${editAwardItem.typeName()}", decimal = true, value = editAwardItem.awardValue, unit="元", onValueChange = {
             viewModel.editAwardItem = viewModel.editAwardItem.copy(awardValue = it)
         })
 

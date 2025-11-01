@@ -24,8 +24,8 @@ import androidx.navigation.compose.rememberNavController
 import cn.jianyun.worktime.hilt.respo.BaseRepository
 import cn.jianyun.worktime.main.question.QuestionView
 import cn.jianyun.worktime.main.setting.local.LocalBackupView
-import cn.jianyun.worktime.main.setting.notify.NotifySettingView
 import cn.jianyun.worktime.main.setting.user.UserDetailView
+import cn.jianyun.worktime.main.setting.vip.VipPage
 import cn.jianyun.worktime.module.base.router.WebDAVRouter
 import cn.jianyun.worktime.module.base.views.docs.PrivatePolicy
 import cn.jianyun.worktime.module.base.views.docs.UserPolicy
@@ -41,6 +41,7 @@ import cn.jianyun.worktime.module.timework.views.defaults.TimeworkDefaultConfigE
 import cn.jianyun.worktime.module.timework.views.defaults.TimeworkDefaultConfigView
 import cn.jianyun.worktime.module.timework.views.project.TimeworkProjectManageView
 import cn.jianyun.worktime.module.timework.views.salary.TimeworkSalaryEditView
+import cn.jianyun.worktime.module.timework.views.share.TimeworkShareView
 import cn.jianyun.worktime.module.timework.views.stat.TimeworkDetailDataView
 import cn.jianyun.worktime.module.timework.views.style.TimeworkAppConfigView
 import cn.jianyun.worktime.module.timework.views.tool.ImportDataView
@@ -160,6 +161,10 @@ fun MainScreen(baseRepository: BaseRepository, activity: MainActivity) {
                         TimeworkCloudManageView(navHostController = navController)
                     }
 
+                    composable(route= TimeworkRouter.TimeworkShare.route){
+                        TimeworkShareView(navHostController = navController)
+                    }
+
                     composable(route= TimeworkRouter.TimeworkProjectManage.route){
                         TimeworkProjectManageView(navHostController = navController)
                     }
@@ -204,15 +209,14 @@ fun MainScreen(baseRepository: BaseRepository, activity: MainActivity) {
                         LocalBackupView(navHostController = navController)
                     }
 
-                    composable(route = Router.NotifySetting.route) {
-                        NotifySettingView(navHostController = navController)
-                    }
-
                     composable(route = Router.ImportData.route) {
                         ImportDataView(navHostController = navController)
                     }
                     composable(route = Router.BatchAdd.route) {
                         BatchAddView(navHostController = navController)
+                    }
+                    composable(route = Router.VipPage.route) {
+                        VipPage(navHostController = navController, activity=activity)
                     }
                 }
             }

@@ -3,9 +3,15 @@ package cn.jianyun.worktime.module.base.views.webdav
 
 import android.annotation.SuppressLint
 import android.os.Bundle
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import cn.jianyun.worktime.R
 import cn.jianyun.worktime.model.DELETE
 import cn.jianyun.worktime.model.FormType
 import cn.jianyun.worktime.module.base.model.WebDAVUser
@@ -34,6 +40,8 @@ import com.alibaba.fastjson2.JSON
 @Composable
 fun WebDAVUserEditView(navHostController: NavHostController, arguments: Bundle?) {
 
+
+    val painter = painterResource(id = R.drawable.jgcloud)
     var viewModel = hiltViewModel<WebDAVUserViewModel>()
 
     val model = arguments?.getString("model")
@@ -51,7 +59,8 @@ fun WebDAVUserEditView(navHostController: NavHostController, arguments: Bundle?)
 
         GroupView {
             Blank()
-            FlowTagView(value=viewModel.editItem.platform, dialog = true, big=true, options = SelectUtil.initSingleValues("坚果云","GoogleDrive",  "OneDrive", "DropBox", "Koofr"), onClick = {
+            //"GoogleDrive",  "OneDrive", "DropBox"
+            FlowTagView(value=viewModel.editItem.platform, dialog = true, big=true, options = SelectUtil.initSingleValues("坚果云", "Koofr"), onClick = {
                 viewModel.editItem = viewModel.editItem.copy(platform = it, url = MyWebdavTool.getWebDAVServerUrl(it))
             })
         }
@@ -75,7 +84,14 @@ fun WebDAVUserEditView(navHostController: NavHostController, arguments: Bundle?)
                 viewModel.editItem = viewModel.editItem.copy(masterNode = it)
             })
         }
+
+
+//        if(viewModel.editItem.platform != "坚果云" && viewModel.editItem.platform != "Koofr") {
+//            SmallTipText(text = "请先注册Koofr平台账号，再把${viewModel.editItem.platform}绑定到Koofr即可，上方只需要填写Koofr平台即可")
+//        }
+
         SmallTipText(text = "开发者郑重承诺，默认情况下，你们的云备份账号密码仅会存储到本地，不会上传至开发者服务器")
+        Blank()
 
         LongOkButton("保存") {
             viewModel.save(navHostController)
@@ -86,6 +102,23 @@ fun WebDAVUserEditView(navHostController: NavHostController, arguments: Bundle?)
                 viewModel.copyOne(navHostController)
             }
         }
+
+        LeadingHintView(label = "坚果云密码按如下步骤获取")
+
+        Image(
+            painter = painter,
+            contentDescription = "Zoomable image",
+            contentScale = ContentScale.Fit,
+            modifier = Modifier
+                .fillMaxSize()
+        )
+//
+//        androidx.compose.foundation.Image(
+//            painter = painterResource(R.drawable.jgcloud), contentDescription = "", modifier = Modifier
+//                .radius(8.dp)
+//                .scale(1.5f)
+//        )
+
 
         if(!viewModel.editItem.isAdd()) {
             Blank()

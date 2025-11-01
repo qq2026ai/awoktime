@@ -83,9 +83,9 @@ fun TimeworkConfigView(modifier:Modifier = Modifier, padding: Dp = 0.dp, onDismi
                 viewModel.editItem = viewModel.editItem.copy(beginDay = it)
             })
 
-            SelectItemView(label = "考勤周期", value = viewModel.editItem.statDay, options = SelectUtil.getFromDays(),  onValueChange = {
-                viewModel.editItem = viewModel.editItem.copy(statDay = it)
-            })
+//            SelectItemView(label = "考勤周期", value = viewModel.editItem.statDay, options = SelectUtil.getFromDays(),  onValueChange = {
+//                viewModel.editItem = viewModel.editItem.copy(statDay = it)
+//            })
 
             SwitchItemView(
                 label = "显示中国农历",
@@ -166,6 +166,30 @@ fun TimeworkConfigView(modifier:Modifier = Modifier, padding: Dp = 0.dp, onDismi
                     viewModel.editItem = viewModel.editItem.copy(showHLine = it)
                 }
             )
+
+            SwitchItemView(
+                label = "上班时长需要精确到分钟",
+                value = viewModel.editItem.needEveryMinute,
+                onValueChange = {
+                    viewModel.editItem = viewModel.editItem.copy(needEveryMinute = it)
+                }
+            )
+
+            SwitchItemView(
+                label = "日结需要填写时间",
+                value = viewModel.editItem.needDayTime,
+                onValueChange = {
+                    viewModel.editItem = viewModel.editItem.copy(needDayTime = it)
+                }
+            )
+
+//            SwitchItemView(
+//                label = "日结需要填写时长",
+//                value = viewModel.editItem.needDayPeriod,
+//                onValueChange = {
+//                    viewModel.editItem = viewModel.editItem.copy(needDayPeriod = it)
+//                }
+//            )
 
             SwitchItemView(
                 label = "播放打卡音效",

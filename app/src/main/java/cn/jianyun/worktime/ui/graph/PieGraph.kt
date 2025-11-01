@@ -67,7 +67,7 @@ fun PieGraph(gid: Int, pieData: PieGraphData) {
 
                 var i = 0
                 pieData.datalist.forEach{
-                    config.addData(SimplePieInfo(it.name, it.value.toFloatData(2).toDouble(), it.color.color().toArgb(), it.label(i ++)))
+                    config.addData(SimplePieInfo(it.name, it.value.toFloatData(2).toDouble(), it.color.color().toArgb(), it.label(i ++, pieData.datalist)))
                 }
                 config.drawText(true)
                 config.textSize(30f)

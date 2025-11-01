@@ -18,7 +18,9 @@ import androidx.compose.runtime.setValue
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import cn.jianyun.worktime.api.AppTipInfo
 import cn.jianyun.worktime.api.BaseApi
+import cn.jianyun.worktime.api.ConfigApi
 import cn.jianyun.worktime.api.FestivalData
 import cn.jianyun.worktime.api.TraceApi
 import cn.jianyun.worktime.api.TraceInfo
@@ -62,15 +64,17 @@ class BaseRepository @Inject constructor(
     val api: BaseApi,
     val webDAVUserDao: WebDAVUserDao,
     private val traceApi: TraceApi,
+    private val configApi: ConfigApi,
     @ApplicationContext val context: Context
 ) {
 
     //记录当前页
     var currentPage by mutableStateOf("")
     var toast: Toast? = null
-    var sid by mutableStateOf(0)
-    var sp = ""
+    var sid = 0
+    var page = ""
     var inited = false
+    var registDay = 0
     var focusId by mutableStateOf("")
     var loading by mutableStateOf(false)
     var finishTime by mutableStateOf(0L)
@@ -78,6 +82,11 @@ class BaseRepository @Inject constructor(
     var loginUser by mutableStateOf(User())
     var notifyStatus by mutableStateOf(mapOf<String,Boolean>())
     var uid: String = ""
+    var appTipInfo: AppTipInfo = AppTipInfo()
+    var minVipDay = 60
+    var curVersion: String = ""
+    var showTip: Boolean by mutableStateOf(false)
+    var readVersion: String = ""
 
     var registModel: RegistModel = RegistModel()
 
@@ -98,19 +107,64 @@ class BaseRepository @Inject constructor(
         Log.d("qz init base repository", "base repository")
         runBlocking {
             uid = getUid()
+            curVersion = getCurrentVersion()
+            readVersion = getCache("readVersion", "")
             Log.d("qz init base repository finish", "base repository finish")
 //            postPage("home")
         }
+        val that = this
 
         GlobalScope.launch {
             if(uid != ""){
                 postPage("home")
+                //拉一个数据
+                var ds = withApi {
+                    configApi.listConfigs(app="jgs")
+                }
+                if(ds.success){
+                    var ks = ds.fetchResult()
+
+
+//                    var temp = AppTipInfo()
+//                    temp.vip = 0
+//                    temp.minDay = 0
+//                    temp.maxDay = 10000
+//                    temp.discount = true
+//                    temp.message = "集赞送会员及团购优惠活动"
+//                    temp.url = "https://api.kotal.cn/hm/sa_timework.html"
+//                    temp.newPage = "web"
+//                    temp.isShow = true
+//                    temp.discount = true
+
+
+                    var filterData = ks.filter{one -> one.isShown(that)}
+                    if(filterData.isNotEmpty()){
+                        that.appTipInfo = filterData[0]
+                        that.minVipDay = ifv(that.appTipInfo.minVipDay < 30, 30, that.appTipInfo.minVipDay)
+                        if(!that.booleanCache(that.appTipInfo.uid())) {
+                            that.appTipInfo.isShow = true
+                            that.showTip = true
+                        }
+                    }
+                    else{
+                        that.appTipInfo.isShow = false
+                        that.showTip = false
+                    }
+//
+
+
+                }
             }
         }
     }
 
     fun isVip(): Boolean{
-        return loginUser.vipDate != "" && loginUser.vipDate >= Date().dateStr()
+        val min = ifv(minVipDay < 30, 30, minVipDay)
+        return loginUser.vipDate != "" && loginUser.vipDate >= Date().dateStr() || registDay < min
+    }
+
+    fun isRealVip(): Boolean{
+        return loginUser.isVip()
     }
 
     fun openUrl(url: String){
@@ -135,7 +189,6 @@ class BaseRepository @Inject constructor(
         }
     }
 
-
     fun makeLoading(scope: CoroutineScope? = null){
         if(loading){
             return
@@ -153,6 +206,14 @@ class BaseRepository @Inject constructor(
     }
 
 
+    suspend fun getRegistDay(): Int {
+        val registDay = getCacheDay("registDay")
+        return registDay
+    }
+
+    suspend fun makeLocalRegist(){
+        cacheNow("registDay")
+    }
 
     /**
      * APP初始化工作
@@ -202,6 +263,8 @@ class BaseRepository @Inject constructor(
         var newUser = uu!!
         newUser.registTime = System.currentTimeMillis()
         newUser.uuid = uuid()
+        loginUser = newUser
+        makeLocalRegist()
         cacheJsonValue("uu", newUser)
     }
 
@@ -222,11 +285,13 @@ class BaseRepository @Inject constructor(
     suspend fun fetchHoliday(year: Int): Map<String, FestivalData>{
         mlog("start fetch festival data")
         try{
-            //先查询缓存，然后再考虑查接口
+            //如果是周一，则重新读取
+            val lstTime = CacheUtil.getLong(context, "lastYear", 0);
             var holidays = getArrayCache("hyear${year}", FestivalData::class.java)
-            if(holidays.isEmpty()){
+            if(holidays.isEmpty() || System.currentTimeMillis() - lstTime > 1000 * 60 * 60 * 24 * 5){
                 val data = api.fetchHoliday(year)
                 holidays = data.fetchResult()
+                CacheUtil.setLong(context, "lastYear", System.currentTimeMillis())
             }
             var rst = mutableMapOf<String, FestivalData>()
             holidays.forEach{
@@ -336,6 +401,15 @@ class BaseRepository @Inject constructor(
         val tt = longCache(key)
         val gap = System.currentTimeMillis() - tt
         return (gap / 1000 / 3600).toInt()
+    }
+
+    suspend fun getCacheDay(key: String): Int {
+        val tt = longCache(key)
+        if(tt == 0L){
+            return 0
+        }
+        val gap = System.currentTimeMillis() - tt
+        return (gap / 1000 / 3600 / 24).toInt()
     }
 
     suspend fun getCacheMinute(key: String): Int {

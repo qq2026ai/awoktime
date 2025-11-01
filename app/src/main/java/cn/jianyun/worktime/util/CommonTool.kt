@@ -4,6 +4,7 @@ package cn.jianyun.worktime.util
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
+import android.os.Bundle
 import android.util.Base64
 import android.util.DisplayMetrics
 import android.util.Log
@@ -18,8 +19,10 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.glance.unit.ColorProvider
 import androidx.navigation.NavHostController
+import cn.jianyun.worktime.BuildConfig
 import cn.jianyun.worktime.api.ApiResult
 import cn.jianyun.worktime.main.Router
+import cn.jianyun.worktime.main.navigateTo
 import cn.jianyun.worktime.ui.theme.ThemeColor
 import cn.jianyun.worktime.util.MyDataTool
 import cn.jianyun.worktime.util.MyDateTool
@@ -74,6 +77,9 @@ suspend fun getStringValue(datastore: DataStore<Preferences>, key:String, defaul
 
 
 fun mlog(vararg arg: Any?){
+    if(!BuildConfig.IS_DEV) {
+        return
+    }
     var group = mutableListOf<String>()
     arg.forEach {
         if(it != null){
@@ -323,17 +329,16 @@ fun base64(str: String): String? {
 
 var lastBack:Long = 0
 fun goBack(navHostController: NavHostController, backAction: (() -> Unit)? = null) {
-
-    if(System.currentTimeMillis() - lastBack < 1000){
-        mlog("ignore back")
-        return
-    }
-    lastBack = System.currentTimeMillis()
-
+    nextPage = ""
     if(backAction != null){
         backAction()
         return
     }
+    if(System.currentTimeMillis() - lastBack < 1000){
+        mlog("ignore back", System.currentTimeMillis() - lastBack)
+        return
+    }
+    lastBack = System.currentTimeMillis()
     if(navHostController.currentBackStackEntry == null){
         mlog("toTop", "已经到顶部路由了")
         return
@@ -347,10 +352,32 @@ fun goBack(navHostController: NavHostController, backAction: (() -> Unit)? = nul
     mlog("回到上一页", navHostController.currentDestination?.navigatorName ?: "", navHostController.currentDestination?.route ?: "")
     try{
         navHostController.popBackStack()
+        nextPage = ""
     }
     catch (ee: Exception){
         mlog("go back error", ee)
     }
+}
+
+var nextPage: String = ""
+var nextTime: Long = 0
+fun toPage(navHostController: NavHostController, newPage: String, bundle: Bundle? = null) {
+    if(nextPage == newPage && System.currentTimeMillis() - nextTime < 1200){
+        return;
+    }
+    nextPage = newPage
+    nextTime = System.currentTimeMillis()
+    if(bundle != null){
+        navHostController.navigateTo(newPage, bundle)
+    }
+    else{
+        navHostController.navigate(newPage)
+    }
+}
+
+
+fun toVipPage(navHostController: NavHostController){
+    toPage(navHostController, Router.VipPage.route)
 }
 
 fun pushMapValue(map: MutableMap<String, Float>, key: String, value: Float) {

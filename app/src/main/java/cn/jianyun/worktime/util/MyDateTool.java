@@ -1,10 +1,15 @@
 package cn.jianyun.worktime.util;
 
+import static cn.jianyun.worktime.util.CommonToolKt.mlog;
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -68,9 +73,7 @@ public class MyDateTool {
         put(7, "周六");
     }};
 
-
     public static Map<String, List<List<MonthDateInfo>>> monthCache = new HashMap<>();
-
 
     public static Date getNow(){
         return new Date();
@@ -90,6 +93,47 @@ public class MyDateTool {
 
     public static String toDateTimeString(Date date){
         return format(date, PATTERN_DATE_TIME);
+    }
+
+    public static String parseSwiftDate(Float ts){
+        //计算时区
+        String zone = getTimeZoneOffsetString();
+        mlog("当前偏移:" + zone);
+        var first = MyDateTool.parseDateTimeString("2001-01-01 " + zone);
+        first.setTime(first.getTime() + ts.longValue() * 1000);
+        return MyDateTool.toDateString(first);
+    }
+
+    public static String getTimeZoneOffsetString() {
+        // 获取系统默认时区
+        ZoneId zone = ZoneId.systemDefault();
+
+        // 获取当前时间在该时区的偏移量
+        ZonedDateTime now = ZonedDateTime.now(zone);
+        ZoneOffset offset = now.getOffset();
+
+        // 计算总小时数（包含小数，例如+5.5时区）
+        double totalHours = offset.getTotalSeconds() / 3600.0;
+        int hours = (int) totalHours;
+        int minutes = (int) ((totalHours - hours) * 60);
+
+        if(hours < 0){
+            return "00:00:00";
+        }
+        // 格式化输出
+        if (minutes == 0) {
+            // 如果是整小时，格式化为"±HH:00"
+            return String.format("%02d:00:00", hours);
+        } else {
+            // 如果有分钟偏移（如+05:30）
+            return String.format("%02d:%02d:00", hours, Math.abs(minutes));
+        }
+    }
+
+
+    public static Long toSwiftTime(Date date){
+        var first = MyDateTool.parseDateTimeString("2001-01-01 00:00:00");
+        return (date.getTime() - first.getTime()) / 1000;
     }
 
     public static String toShortDateTimeString(Date date){
@@ -155,7 +199,7 @@ public class MyDateTool {
             return new SimpleDateFormat(PATTERN_DATE_TIME).parse(dateStr);
         }
         catch (Exception e){
-            return null;
+            return new Date();
         }
     }
 

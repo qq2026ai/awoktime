@@ -16,6 +16,7 @@ import cn.jianyun.worktime.ui.component.nav.EmptyIconDataView
 import cn.jianyun.worktime.ui.component.nav.HeaderIcon
 import cn.jianyun.worktime.ui.component.nav.IconFont
 import cn.jianyun.worktime.ui.component.nav.PageWithFooterView
+import cn.jianyun.worktime.util.toVipPage
 import com.darkrockstudios.libraries.mpfilepicker.DirectoryPicker
 
 @Composable
@@ -33,6 +34,12 @@ fun CommonCloudView(navHostController: NavHostController, baseCloudViewModel: Ba
         if(baseCloudViewModel.isValid()){
             if(baseCloudViewModel.hasData()){
                 OkAndCancelButtonGroup(okLabel = "全量备份", cancelLabel = "清空备份", okAction = {
+                    if(baseCloudViewModel.backType == "cloud"){
+                        if(!baseCloudViewModel.getRepository().isVip()){
+                            toVipPage(navHostController)
+                            return@OkAndCancelButtonGroup
+                        }
+                    }
                     baseCloudViewModel.doBackup()
                 }) {
                     baseCloudViewModel.formType = FormType.clear()
@@ -40,6 +47,12 @@ fun CommonCloudView(navHostController: NavHostController, baseCloudViewModel: Ba
             }
             else{
                 LongOkButton("全量备份") {
+                    if(baseCloudViewModel.backType == "cloud"){
+                        if(!baseCloudViewModel.getRepository().isVip()){
+                            toVipPage(navHostController)
+                            return@LongOkButton
+                        }
+                    }
                     baseCloudViewModel.doBackup()
                 }
             }

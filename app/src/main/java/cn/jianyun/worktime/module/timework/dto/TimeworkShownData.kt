@@ -22,14 +22,12 @@ data class TimeworkShownData(
     var dayMoney: String = "",
     var awardValue: String = "",
     var fineValue: String = "",
-
     var hourSize: Int = 12,
     var moneySize: Int = 12
-
 ){
 
     fun isEmpty(): Boolean{
-        return hour.toIntData() == 0 && money.toIntData() == 0 && awardValue.toIntData() == 0 && fineValue.toIntData() == 0 && dayMoney.toIntData() == 0 && !(leave || rest)
+        return MyDataTool.getShownTime(hour) == "无" && money.toIntData() == 0 && awardValue.toIntData() == 0 && fineValue.toIntData() == 0 && dayMoney.toIntData() == 0 && !(leave || rest)
     }
 
     fun hasAward(): Boolean{
@@ -65,17 +63,17 @@ data class TimeworkShownData(
     }
 
     fun fetchShownHour(): String{
+        if(dayMoney != ""){
+            return "日结"
+        }
+        if(leave){
+            return "请假"
+        }
+        if(rest){
+            return "休息"
+        }
         var a = MyDataTool.timeToDecimal(hour)
         if(a == ""){
-            if(dayMoney != ""){
-                return "日结"
-            }
-            if(leave){
-                return "请假"
-            }
-            if(rest){
-                return "休息"
-            }
             if(awardValue != ""){
                 return "补贴"
             }
@@ -86,6 +84,9 @@ data class TimeworkShownData(
         }
         if(MyDataTool.getPriceWithFloat(a, 0) == MyDataTool.getPriceWithFloat(a, 1)) {
             a = MyDataTool.getShownPrice(a, 0);
+        }
+        else if(MyDataTool.getPriceWithFloat(a, 1) == MyDataTool.getPriceWithFloat(a, 2)) {
+            a = MyDataTool.getShownPrice(a, 1);
         }
         return a + "h"
     }

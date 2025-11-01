@@ -1,5 +1,6 @@
 package cn.jianyun.worktime.api
 
+import cn.jianyun.worktime.module.timework.vm.ShareDataDO
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Header
@@ -13,4 +14,11 @@ interface TraceApi {
 
     @GET("/api/application/version")
     suspend fun getAppVersion(@Query("app") app:String): ApiResult<String>
+
+    @POST("/api/shareData/share")
+    suspend fun share(@Body shareDataDO: ShareDataDO): ApiResult<String>
+
+    @GET("/api/shareData/fetch")
+    suspend fun fetch(@Query("shareId") shareId: String, @Query("appId") app:String = "jgs"): ApiResult<ShareDataDO>
+
 }

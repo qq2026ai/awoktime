@@ -38,6 +38,7 @@ import cn.jianyun.worktime.ui.component.form.SegmentItemView
 import cn.jianyun.worktime.ui.component.nav.FlowTagView
 import cn.jianyun.worktime.ui.component.nav.HeaderView
 import cn.jianyun.worktime.ui.component.nav.LeadingHintView
+import cn.jianyun.worktime.util.goBack
 import com.alibaba.fastjson2.JSON
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
@@ -57,7 +58,7 @@ fun TimeworkAwardEditView(navHostController: NavHostController, arguments: Bundl
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)) {
                 HeaderView(title= ifv(editInfo.uuid == "", "添加", "编辑"), backAction = {
-                    navHostController.popBackStack()
+                    goBack(navHostController)
                 })
                 Column(modifier = Modifier
                     .padding(10.dp, 25.dp)

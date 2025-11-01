@@ -15,8 +15,8 @@ android {
         applicationId = "cn.jianyun.worktime"
         minSdk = 26
         targetSdk = 34
-        versionCode = 6
-        versionName = "1.2.1"
+        versionCode = 21
+        versionName = "1.9.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -24,14 +24,21 @@ android {
         }
     }
 
+    buildFeatures {
+        buildConfig=true
+    }
 
     buildTypes {
+        debug {
+            buildConfigField("boolean", "IS_DEV", "true")
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            buildConfigField("boolean", "IS_DEV", "false")
         }
     }
     compileOptions {
@@ -100,6 +107,10 @@ dependencies {
     implementation("dev.chrisbanes.snapper:snapper:0.3.0")
     implementation("co.yml:ycharts:2.1.0")
 
+    implementation("org.apache.poi:poi-ooxml:5.2.3") // 支持.xlsx文件
+    implementation("org.apache.poi:poi:5.2.3")      // 支持.xls文件
+//    implementation("org.apache.xmlbeans:xmlbeans:5.1.1") // 必需依赖
+//    implementation("javax.xml.stream:stax-api:1.0-2")    // 必需依赖
 
     implementation("com.alibaba.fastjson2:fastjson2-kotlin:2.0.41")
     testImplementation("junit:junit:4.13.2")
@@ -110,8 +121,8 @@ dependencies {
 
     implementation("io.coil-kt:coil-compose:2.6.0")
 
-
     implementation("androidx.core:core-splashscreen:1.0.1")
+//    implementation("net.engawapg.lib:zoomable:2.5.0")
     implementation("com.github.nanihadesuka:LazyColumnScrollbar:2.1.0")
 
 //    implementation("com.github.promeg:tinypinyin:2.0.3") // TinyPinyin核心包，约80KB

@@ -33,6 +33,9 @@ data class WebDAVUser(
     }
 
     fun isValid(): String {
+        if(platform == ""){
+            return "云备份平台不能为空"
+        }
         if(username.trim() == "" || password.trim() == ""){
             return "账号密码均不能为空"
         }

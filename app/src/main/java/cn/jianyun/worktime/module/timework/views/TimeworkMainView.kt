@@ -13,10 +13,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
 import cn.jianyun.worktime.model.FormType
 import cn.jianyun.worktime.module.timework.views.award.TimeworkAwardView
@@ -27,6 +29,8 @@ import cn.jianyun.worktime.module.timework.views.stat.TimeworkStatView
 import cn.jianyun.worktime.module.timework.vm.TimeworkMasterViewModel
 import cn.jianyun.worktime.ui.component.nav.NavItemView
 import cn.jianyun.worktime.ui.component.nav.IconFont
+import cn.jianyun.worktime.util.MyRandomTool
+import kotlinx.coroutines.launch
 
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
@@ -34,6 +38,16 @@ import cn.jianyun.worktime.ui.component.nav.IconFont
 fun TimeworkMainView(navHostController: NavHostController, activity: Activity) {
 
     var viewModel = hiltViewModel<TimeworkMasterViewModel>()
+
+    if(viewModel.baseRepository.page == "home") {
+        LaunchedEffect(Unit) {
+            viewModel.pageType = FormType("home")
+            viewModel.baseRepository.page = ""
+            viewModel.baseRepository.sid += 1
+            viewModel.reload()
+        }
+    }
+
 
     Scaffold (content = {
         Box(modifier= Modifier, contentAlignment = Alignment.BottomCenter){

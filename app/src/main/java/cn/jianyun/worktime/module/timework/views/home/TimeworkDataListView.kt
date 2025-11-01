@@ -1,11 +1,14 @@
 package cn.jianyun.worktime.module.timework.views.home
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import cn.jianyun.worktime.model.FormType
 import cn.jianyun.worktime.module.timework.model.TimeworkAwardData
 import cn.jianyun.worktime.module.timework.model.TimeworkData
@@ -17,6 +20,7 @@ import cn.jianyun.worktime.ui.component.nav.TagView
 import cn.jianyun.worktime.ui.component.nav.TwoColumnView
 import cn.jianyun.worktime.ui.component.nav.VerticalRow
 import cn.jianyun.worktime.ui.component.nav.WithUnitView
+import cn.jianyun.worktime.util.ifv
 
 @Composable
 fun TimeworkDataListView(viewModel: TimeworkMasterViewModel) {
@@ -90,9 +94,14 @@ fun TimeworkDataItemView(viewModel: TimeworkMasterViewModel, item: TimeworkData)
             if(item.mode == "day"){
                 TwoColumnView(padding = 15.dp) {
                     Column{
-                        Text("日结")
-                        if(item.remark != ""){
-                            SmallTipText("备注:" + item.remark)
+                        Column{
+                            Text("日结打卡" + ifv(item.beginTime != "", ":" + item.fetchBaseHourShownInfo(), ""))
+                            if(item.beginTime != ""){
+                                SmallTipText(item.beginTime + "~" + item.endTime)
+                            }
+                            if(item.remark != ""){
+                                SmallTipText("备注:" + item.remark)
+                            }
                         }
                     }
                     WithUnitView(text = item.amount, unit = "元")
@@ -101,7 +110,7 @@ fun TimeworkDataItemView(viewModel: TimeworkMasterViewModel, item: TimeworkData)
             if(item.mode == "time"){
                 TwoColumnView(padding = 15.dp) {
                     Column{
-                        Text("打卡:" + item.beginTime + "~" + item.endTime )
+                        Text("时间打卡:" +  item.fetchBaseHourShownInfo() + "(" +  item.beginTime + "~" + item.endTime + ")")
                         SmallTipText(item.baseSalaryInfo)
                         if(item.remark != ""){
                             SmallTipText("备注:" + item.remark)
@@ -130,12 +139,8 @@ fun TimeworkDataItemView(viewModel: TimeworkMasterViewModel, item: TimeworkData)
                     }
                 }
             }
-
-
         }
-
     }
-
 
 }
 

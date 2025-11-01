@@ -2,9 +2,11 @@ package cn.jianyun.worktime.ui.component.form
 
 import android.util.Log
 import android.widget.Toast
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -136,7 +138,7 @@ fun LabelItemView(label: String, required: Boolean = false){
 @Composable
 fun ValueItemView(value: String, multiLine: Boolean = false,password: Boolean=false, readonly: Boolean = false, unit:String = "", onClick: () -> Unit){
 
-    val defaultValue = value == "请输入" || value == "请选择" || value == "无" || readonly
+    val defaultValue = value == "请输入" || value == "选填" || value == "请选择" || value == "无" || readonly
     var showValue = value
     var fontSize = 16.sp
     if(value.count() > 30){
@@ -436,7 +438,7 @@ fun InputItemView(label: String,readonly: Boolean = false, password: Boolean = f
                 verticalAlignment =  Alignment.CenterVertically ){
                 LabelItemView(label, required)
                 Blank()
-                ValueItemView(value = ifv(value, "请输入"), readonly=readonly, password=password, multiLine=false){
+                ValueItemView(value = ifv(value, ifv(!readonly,"请输入", "")), readonly=readonly, password=password, multiLine=false){
                     if(!readonly){
                         openDialog = true
                     }
@@ -776,27 +778,10 @@ fun ShowInputDialog(value: String, tip: String = "", password: Boolean=false,min
                         .padding(20.dp), horizontalArrangement = Arrangement.SpaceBetween) {
 
                         Row{
-//                            Text(text="粘贴", fontSize = 12.sp, modifier = Modifier
-//                                .radius(5.dp)
-//                                .clickable {
-//                                    val tt = ClipboardUtil.getText(context)
-//                                    if (tt != "") {
-//                                        textFieldValueState = TextFieldValue(
-//                                            text = tt,
-//                                            selection = TextRange(tt.length, tt.length)
-//                                        )
-//                                    } else {
-//                                        Toast
-//                                            .makeText(context, "粘贴板内容为空", Toast.LENGTH_SHORT)
-//                                            .show()
-//                                    }
-//                                }
-//                                .padding(horizontal = 10.dp), color= MaterialTheme.colorScheme.tertiary, fontWeight = FontWeight.Medium)
-
                             if(textFieldValueState.text != ""){
                                 Text(text="清空", fontSize = 12.sp, color= MaterialTheme.colorScheme.tertiary, fontWeight = FontWeight.Medium, modifier = Modifier.clickable {
                                     textFieldValueState = TextFieldValue(text = "", selection = TextRange(0,0))
-                                })
+                                }.padding(10.dp))
                             }
                         }
 
@@ -1272,19 +1257,19 @@ fun LunarDatePickerItemView(label: String, value: String, onValueChange: (String
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TimePickerItemView3(label: String, value: String, onValueChange: (String) -> Unit) {
+fun TimePickerItemView3(label: String, allowEmpty:Boolean = false, minuteStep: Int = 1,  placeholder: String = "请选择", value: String, onValueChange: (String) -> Unit) {
     var openDialog by remember { mutableStateOf(false) }
     var hours = mutableListOf<String>()
 
 //    var type by remember{ mutableStateOf("5") }
 
-    for(i in 0 until 24){
+    for(i in 0 until 25){
         hours.add(if(i < 10) ("0$i") else "$i")
     }
 
     var minutes = mutableListOf<String>()
-    for(i in 0 until 60 step 5){
-        minutes.add(if(i < 10) ("0$i") else "$i")
+    for (i in 0 until 60 step minuteStep) {
+        minutes.add(if (i < 10) ("0$i") else "$i")
     }
 
     var hourIdx = 0
@@ -1302,7 +1287,7 @@ fun TimePickerItemView3(label: String, value: String, onValueChange: (String) ->
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically){
             LabelItemView(label)
-            ValueItemView(value = ifv(value == "", "请选择", value)){
+            ValueItemView(value = ifv(value == "", placeholder, value)){
                 openDialog = true
             }
         }
@@ -1325,34 +1310,13 @@ fun TimePickerItemView3(label: String, value: String, onValueChange: (String) ->
                     Row(modifier=Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically){
                         Text("选择时间", modifier = Modifier.padding(20.dp))
 
-//                        Row(modifier=Modifier.padding(horizontal = 10.dp)) {
-//
-//                            Text("5分钟", fontSize=12.sp, color= focusColor(type == "5"), modifier = Modifier
-//                                .radius(4.dp)
-//                                .padding(3.dp, 2.dp)
-//                                .clickable {
-//                                    type = "5"
-//                                    var tt = mutableListOf<String>()
-//                                    for (i in 0 until 60 step 5) {
-//                                        tt.add(if (i < 10) ("0$i") else "$i")
-//                                    }
-//                                    minutes = tt
-//                                    minuteState = FWheelPickerState(0)
-//                                })
-//
-//                            Text("1分钟",  fontSize=12.sp,color= focusColor(type == "1"), modifier = Modifier
-//                                .radius(4.dp)
-//                                .padding(3.dp, 2.dp)
-//                                .clickable {
-//                                    type = "1"
-//                                    var tt = mutableListOf<String>()
-//                                    for (i in 0 until 60) {
-//                                        tt.add(if (i < 10) ("0$i") else "$i")
-//                                    }
-//                                    minutes = tt
-//                                    minuteState = FWheelPickerState(0)
-//                                })
-//                        }
+
+                        if(allowEmpty){
+                            Text("清空", fontSize = 12.sp, modifier = Modifier.clickable {
+                                onValueChange("")
+                                openDialog = false
+                            }.padding(10.dp))
+                        }
 
                     }
 
@@ -1371,7 +1335,6 @@ fun TimePickerItemView3(label: String, value: String, onValueChange: (String) ->
                             Text(hours.get(index), color= focusColor(flag = index == hourState.currentIndexSnapshot))
                         }
                         Text(":")
-
                         FVerticalWheelPicker(
                             modifier = Modifier.weight(0.5f),
                             // Specified item count.
@@ -1391,7 +1354,8 @@ fun TimePickerItemView3(label: String, value: String, onValueChange: (String) ->
                         openDialog = false
                     }, onConfirm = {
                         openDialog = false
-                        onValueChange("${hours[hourState.currentIndex]}:${minutes[minuteState.currentIndex]}")
+
+                        onValueChange("${hours[hourState.currentIndexSnapshot]}:${minutes[minuteState.currentIndexSnapshot]}")
                     })
                 }
 
@@ -1402,7 +1366,7 @@ fun TimePickerItemView3(label: String, value: String, onValueChange: (String) ->
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TimePeriodPickerItemView3(label: String, allowEmpty: Boolean= false, value: String, onValueChange: (String) -> Unit) {
+fun TimePeriodPickerItemView3(label: String,placeholder: String = "请选择", allowEmpty: Boolean= false, minuteStep: Int = 5, value: String, onValueChange: (String) -> Unit) {
     var openDialog by remember { mutableStateOf(false) }
 
     var inited by remember { mutableStateOf(false) }
@@ -1410,59 +1374,35 @@ fun TimePeriodPickerItemView3(label: String, allowEmpty: Boolean= false, value: 
     val vv = value.split(":")
     mlog("inited1....", value)
 
-    //判断时间
-//    if(!inited){
-//        if(vv.size == 2){
-//            if(vv[1].toIntData() % 5 == 0){
-//                type = "5"
-//            }
-//            else{
-//                type = "1"
-//            }
-//            mlog("reset type", type, value)
-//        }
-//        mlog("inited2....", value)
-//    }
-
     var hours = mutableListOf<String>()
-    for(i in 0 until 24){
+    for(i in 0 until 25){
         hours.add("$i")
     }
 
     var minutes = mutableListOf<String>()
-    var type = "5"
-    for(i in 0 until 60 step type.toInt()){
+    for(i in 0 until 60 step minuteStep){
         minutes.add("$i")
     }
-//    if(type == "5"){
-//        for(i in 0 until 60 step 5){
-//            minutes.add("$i")
-//        }
-//    }
-//    else{
-//        for(i in 0 until 60){
-//            minutes.add("$i")
-//        }
-//    }
+
     var tempMinute by remember { mutableStateOf( "0")}
 
     var hourIdx = 0
     var minuteIdx = 0
-    var showValue = "请选择"
+    var showValue = placeholder
 
     if(vv.size == 2){
         hourIdx = hours.indexOf(vv[0])
         minuteIdx = minutes.indexOf(vv[1])
         tempMinute = vv[1]
         var txt = ifv(hourIdx == 0, "", vv[0] + "小时") + ifv(minuteIdx > 0, vv[1] + "分钟", "")
-        showValue = ifv(txt == "", "请选择", txt)
+        showValue = ifv(txt == "", placeholder, txt)
         mlog("reset index", hourIdx, minuteIdx)
     }
 
     var hourState = rememberFWheelPickerState(initialIndex = hourIdx)
     var minuteState = rememberFWheelPickerState(initialIndex = minuteIdx)
     inited = true
-    showValue = ifv(showValue == "请选择" && allowEmpty, "无", showValue)
+    showValue = ifv(showValue == placeholder && allowEmpty, "无", showValue)
 
     return Column {
         Row(modifier= Modifier
@@ -1490,36 +1430,6 @@ fun TimePeriodPickerItemView3(label: String, allowEmpty: Boolean= false, value: 
 
                     Row(modifier=Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically){
                         Text("选择时长", modifier = Modifier.padding(20.dp))
-
-//                        Row(modifier=Modifier.padding(horizontal = 10.dp)) {
-//
-//                            Text("5分钟", fontSize=12.sp, color= focusColor(type == "5", MaterialTheme.colorScheme), modifier = Modifier
-//                                .radius(4.dp)
-//                                .padding(3.dp, 2.dp)
-//                                .clickable {
-//                                    type = "5"
-//                                    var tt = mutableListOf<String>()
-//                                    for (i in 0 until 60 step 5) {
-//                                        tt.add("$i")
-//                                    }
-//                                    minutes = tt
-//                                    minuteState = FWheelPickerState(0)
-//                                })
-//
-//                            Text("1分钟",  fontSize=12.sp,color= focusColor(type == "1", MaterialTheme.colorScheme), modifier = Modifier
-//                                .radius(4.dp)
-//                                .padding(3.dp, 2.dp)
-//                                .clickable {
-//                                    type = "1"
-//                                    var tt = mutableListOf<String>()
-//                                    for (i in 0 until 60) {
-//                                        tt.add("$i")
-//                                    }
-//                                    minutes = tt
-//                                    minuteState = FWheelPickerState(0)
-//                                })
-//                        }
-
                     }
 
                     Row(modifier=Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
@@ -1558,328 +1468,7 @@ fun TimePeriodPickerItemView3(label: String, allowEmpty: Boolean= false, value: 
                         openDialog = false
                     }, onConfirm = {
                         openDialog = false
-                        onValueChange("${hours[hourState.currentIndex]}:${minutes[minuteState.currentIndex]}")
-                    })
-                }
-
-            }
-        }
-    }
-}
-
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun DoublePickerItemView(label: String, value1: String, onValue1Change: (String) -> Unit, value2: String, onValue2Change: (String) -> Unit, gapMinute: Int = 0) {
-    var openDialog1 by remember { mutableStateOf(false) }
-    var openDialog2 by remember { mutableStateOf(false) }
-
-    var hours = mutableListOf<String>()
-    for(i in 0 until 24){
-        hours.add(if(i < 10) ("0$i") else "$i")
-    }
-
-    var minutes = mutableListOf<String>()
-    for(i in 0 until 60 step 5){
-        minutes.add(if(i < 10) ("0$i") else "$i")
-    }
-
-    var hourIdx = 0
-    var minuteIdx = 0
-    val vv = value1.split(":")
-    if(vv.size == 2){
-        hourIdx = hours.indexOf(vv[0])
-        minuteIdx = minutes.indexOf(vv[1])
-    }
-
-    var hourIdx2 = 0
-    var minuteIdx2 = 0
-    val vv2 = value2.split(":")
-    if(vv2.size == 2){
-        hourIdx2 = hours.indexOf(vv[0])
-        minuteIdx2 = minutes.indexOf(vv[1])
-    }
-    Log.d("picker render", label + ":" +  value1 + ":" + value2)
-
-    return Column {
-        Row(modifier= Modifier
-            .fillMaxWidth()
-            .height(50.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically){
-            LabelItemView(label)
-            
-            Row{
-                ValueItemView(value = value1){
-                    openDialog1 = true
-                }
-                Text("-",modifier = Modifier.padding(horizontal = 5.dp))
-                ValueItemView(value = value2) {
-                    openDialog2 = true
-                }
-            }
-        }
-
-        var hourState = rememberFWheelPickerState(initialIndex = hourIdx)
-        var minuteState = rememberFWheelPickerState(initialIndex = minuteIdx)
-
-        var hourState2 = rememberFWheelPickerState(initialIndex = hourIdx2)
-        var minuteState2 = rememberFWheelPickerState(initialIndex = minuteIdx2)
-
-        if(openDialog1){
-
-            AlertDialog(onDismissRequest = {
-                openDialog1 = false
-            }, modifier = Modifier.clip(RoundedCornerShape(20.dp))) {
-                Column(modifier= Modifier
-                    .padding(0.dp)
-                    .background(color = MaterialTheme.colorScheme.surface)
-                    .clip(
-                        RoundedCornerShape(20.dp)
-                    ), horizontalAlignment = Alignment.CenterHorizontally) {
-
-                    DialogTitleView("选择时间")
-
-                    Row(modifier=Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                        FVerticalWheelPicker(
-                            modifier = Modifier.weight(0.4f),
-                            // Specified item count.
-                            count = hours.size,
-                            unfocusedCount = 2,
-                            state = hourState,
-                            focus = {
-                                // Custom divider.
-                                FWheelPickerFocusVertical(dividerColor = MaterialTheme.colorScheme.surfaceVariant, dividerSize = 1.dp)
-                            }
-                        ) { index ->
-                            Text(hours.get(index))
-                        }
-                        Text(":")
-                        FVerticalWheelPicker(
-                            modifier = Modifier.weight(0.4f),
-                            // Specified item count.
-                            count = minutes.size,
-                            unfocusedCount = 2,
-                            state = minuteState,
-                            focus = {
-                                // Custom divider.
-                                FWheelPickerFocusVertical(dividerColor = MaterialTheme.colorScheme.surfaceVariant, dividerSize = 1.dp)
-                            }
-                        ) { index ->
-                            Text(minutes.get(index))
-                        }
-                    }
-
-                    BottomConfirmButtonGroup(onDismiss = {
-                        openDialog1 = false
-                    }, onConfirm = {
-                        openDialog1 = false
-                        onValue1Change("${hours[hourState.currentIndex]}:${minutes[minuteState.currentIndex]}")
-                    })
-                }
-
-            }
-        }
-
-
-        if(openDialog2){
-
-            AlertDialog(onDismissRequest = {
-                openDialog2 = false
-            }, modifier = Modifier.clip(RoundedCornerShape(20.dp))) {
-                Column(modifier= Modifier
-                    .padding(0.dp)
-                    .background(color = MaterialTheme.colorScheme.surface)
-                    .clip(
-                        RoundedCornerShape(20.dp)
-                    ), horizontalAlignment = Alignment.CenterHorizontally) {
-
-                    DialogTitleView(title = "选择时间")
-
-                    Row(modifier=Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                        FVerticalWheelPicker(
-                            modifier = Modifier.weight(0.2f),
-                            // Specified item count.
-                            count = hours.size,
-                            unfocusedCount = 2,
-                            state = hourState2,
-                            focus = {
-                                // Custom divider.
-                                FWheelPickerFocusVertical(dividerColor = MaterialTheme.colorScheme.surfaceVariant, dividerSize = 1.dp)
-                            }
-                        ) { index ->
-                            Text(hours.get(index))
-                        }
-                        Text(":")
-                        FVerticalWheelPicker(
-                            modifier = Modifier.weight(0.2f),
-                            // Specified item count.
-                            count = minutes.size,
-                            unfocusedCount = 2,
-                            state = minuteState2,
-                            focus = {
-                                // Custom divider.
-                                FWheelPickerFocusVertical(dividerColor = MaterialTheme.colorScheme.surfaceVariant, dividerSize = 1.dp)
-                            }
-                        ) { index ->
-                            Text(minutes.get(index))
-                        }
-                    }
-
-                    BottomConfirmButtonGroup(onDismiss = {
-                        openDialog2 = false
-                    }, onConfirm = {
-                        openDialog2 = false
-                        onValue2Change("${hours[hourState2.currentIndex]}:${minutes[minuteState2.currentIndex]}")
-                    })
-                }
-
-            }
-        }
-
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun DoublePickerItemView2(label: String, value1: String, onValue1Change: (String) -> Unit, value2: String, onValue2Change: (String) -> Unit, gapMinute: Int = 0) {
-    var openDialog by remember { mutableStateOf(false) }
-
-    var hours = mutableListOf<String>()
-    for(i in 0 until 24){
-        hours.add(if(i < 10) ("0$i") else "$i")
-    }
-
-    var minutes = mutableListOf<String>()
-    for(i in 0 until 60 step 5){
-        minutes.add(if(i < 10) ("0$i") else "$i")
-    }
-
-    var hourIdx = 0
-    var minuteIdx = 0
-    val vv = value1.split(":")
-    if(vv.size == 2){
-        hourIdx = hours.indexOf(vv[0])
-        minuteIdx = minutes.indexOf(vv[1])
-    }
-
-    var hourIdx2 = 0
-    var minuteIdx2 = 0
-    val vv2 = value2.split(":")
-    if(vv2.size == 2){
-        hourIdx2 = hours.indexOf(vv[0])
-        minuteIdx2 = minutes.indexOf(vv[1])
-    }
-    Log.d("picker render", label + ":" +  value1 + ":" + value2)
-
-    return Column {
-        Row(modifier= Modifier
-            .fillMaxWidth()
-            .height(50.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically){
-            LabelItemView(label)
-
-            Row{
-                ValueItemView(value = value1){
-                    openDialog = true
-                }
-                Text("-",modifier = Modifier.padding(horizontal = 5.dp))
-                ValueItemView(value = value2) {
-                    openDialog = true
-                }
-            }
-        }
-
-        var hourState = rememberFWheelPickerState(initialIndex = hourIdx)
-        var minuteState = rememberFWheelPickerState(initialIndex = minuteIdx)
-
-        var hourState2 = rememberFWheelPickerState(initialIndex = hourIdx2)
-        var minuteState2 = rememberFWheelPickerState(initialIndex = minuteIdx2)
-
-
-
-        if(openDialog){
-
-            AlertDialog(onDismissRequest = {
-                openDialog = false
-            }, modifier = Modifier.clip(RoundedCornerShape(20.dp))) {
-                Column(modifier= Modifier
-                    .padding(0.dp)
-                    .background(color = MaterialTheme.colorScheme.surface)
-                    .clip(
-                        RoundedCornerShape(20.dp)
-                    ), horizontalAlignment = Alignment.CenterHorizontally) {
-
-
-                    DialogTitleView(title = "选择时间")
-
-                    Row(modifier=Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                        FVerticalWheelPicker(
-                            modifier = Modifier.weight(0.2f),
-                            // Specified item count.
-                            count = hours.size,
-                            unfocusedCount = 2,
-                            state = hourState,
-                            focus = {
-                                // Custom divider.
-                                FWheelPickerFocusVertical(dividerColor = MaterialTheme.colorScheme.surfaceVariant, dividerSize = 1.dp)
-                            }
-                        ) { index ->
-                            Text(hours.get(index))
-                        }
-                        Text(":")
-                        FVerticalWheelPicker(
-                            modifier = Modifier.weight(0.2f),
-                            // Specified item count.
-                            count = minutes.size,
-                            unfocusedCount = 2,
-                            state = minuteState,
-                            focus = {
-                                // Custom divider.
-                                FWheelPickerFocusVertical(dividerColor = MaterialTheme.colorScheme.surfaceVariant, dividerSize = 1.dp)
-                            }
-                        ) { index ->
-                            Text(minutes.get(index))
-                        }
-
-                        Text("到")
-
-                        FVerticalWheelPicker(
-                            modifier = Modifier.weight(0.2f),
-                            // Specified item count.
-                            count = hours.size,
-                            unfocusedCount = 2,
-                            state = hourState2,
-                            focus = {
-                                // Custom divider.
-                                FWheelPickerFocusVertical(dividerColor = MaterialTheme.colorScheme.surfaceVariant, dividerSize = 1.dp)
-                            }
-                        ) { index ->
-                            Text(hours.get(index))
-                        }
-                        Text(":")
-                        FVerticalWheelPicker(
-                            modifier = Modifier.weight(0.2f),
-                            // Specified item count.
-                            count = minutes.size,
-                            unfocusedCount = 2,
-                            state = minuteState2,
-                            focus = {
-                                // Custom divider.
-                                FWheelPickerFocusVertical(dividerColor = MaterialTheme.colorScheme.surfaceVariant, dividerSize = 1.dp)
-                            }
-                        ) { index ->
-                            Text(minutes.get(index))
-                        }
-                    }
-
-                    BottomConfirmButtonGroup(onDismiss = {
-                        openDialog = false
-                    }, onConfirm = {
-                        openDialog = false
-                        onValue1Change("${hours[hourState.currentIndex]}:${minutes[minuteState.currentIndex]}")
-                        onValue2Change("${hours[hourState2.currentIndex]}:${minutes[minuteState2.currentIndex]}")
+                        onValueChange("${hours[hourState.currentIndexSnapshot]}:${minutes[minuteState.currentIndexSnapshot]}")
                     })
                 }
 
@@ -1950,8 +1539,8 @@ fun SelectItemView(label: String,required: Boolean = false, readonly: Boolean = 
                         openDialog = false
                     }, onConfirm = {
                         openDialog = false
-                        if(options.size > selectState.currentIndex && options.isNotEmpty()){
-                            onValueChange(options[selectState.currentIndex].value)
+                        if(options.size > selectState.currentIndexSnapshot && options.isNotEmpty()){
+                            onValueChange(options[selectState.currentIndexSnapshot].value)
                         }
                     })
                 }
@@ -2209,7 +1798,7 @@ fun ColorSelectItemView(label: String, value: String, onValueChange: (String) ->
 
 
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun ShowColorPickerView(value: String, onValueChange: (String) -> Unit) {
     var openDialog by remember { mutableStateOf(true) }
@@ -2224,7 +1813,7 @@ fun ShowColorPickerView(value: String, onValueChange: (String) -> Unit) {
 
             var colors = readAssetFile(LocalContext.current, "data", "color.json")!!
             val colorList = JSON.parseArray(colors, ColorModel::class.java)
-            val collectColorList = colorViewModel.listColor()
+            var collectColorList = colorViewModel.listColor()
 
             AlertDialog(onDismissRequest = {
                 openDialog = false
@@ -2237,7 +1826,7 @@ fun ShowColorPickerView(value: String, onValueChange: (String) -> Unit) {
                         RoundedCornerShape(20.dp)
                     ), horizontalAlignment = Alignment.CenterHorizontally) {
 
-                    DialogTitleView(title = "请选择")
+                    DialogTitleView(title = "请选择${ifv(colorViewModel.defaultColorMode == "collect", "(长按可以取消收藏)", "")}")
 
                     SegmentPickerView(value = colorViewModel.defaultColorMode, options = SelectUtil.COLOR_MODES) { it
                         colorViewModel.defaultColorMode = it
@@ -2287,7 +1876,6 @@ fun ShowColorPickerView(value: String, onValueChange: (String) -> Unit) {
                         Column(modifier = Modifier
                             .verticalScroll(rememberScrollState())
                         ) {
-
                             LazyVerticalGrid(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -2304,9 +1892,15 @@ fun ShowColorPickerView(value: String, onValueChange: (String) -> Unit) {
                                                 fontSize = 12.sp,
                                                 color = Color.White,
                                                 modifier = Modifier
-                                                    .clickable {
-                                                        selectedOption = collectColorList[it]
-                                                    }
+                                                    .combinedClickable(
+                                                        onClick = {
+                                                            selectedOption = collectColorList[it]
+                                                        },
+                                                        onLongClick = {
+                                                            colorViewModel.removeCollectColor(collectColorList[it])
+                                                            collectColorList = colorViewModel.listColor()
+                                                        }
+                                                    )
                                                     .radius(6.dp)
                                                     .background(collectColorList[it].color())
                                                     .fillMaxWidth()
@@ -2385,7 +1979,7 @@ fun ShowColorPickerView(value: String, onValueChange: (String) -> Unit) {
 
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text("收藏颜色", modifier= Modifier
-
+                                .offset(y = 5.dp)
                                 .radius(6.dp)
                                 .clickable {
                                     val f = colorViewModel.addCollectColor(selectedOption)
@@ -2435,7 +2029,7 @@ fun SegmentPickerView(value: String = "", padding: Dp =0.dp, options: List<Selec
             .radius(8.dp)
             .background(MaterialTheme.colorScheme.surfaceVariant)
             .width((width - 2.dp) * options.size + 4.dp)
-            .height(28.dp)
+            .height(30.dp)
             .padding(2.dp)
     ){
         options.forEach{
@@ -2455,7 +2049,7 @@ fun SegmentPickerView(value: String = "", padding: Dp =0.dp, options: List<Selec
                         )
                     )
                     .width((width - 2.dp))
-                    .height(24.dp)
+                    .height(26.dp)
                     .wrapContentSize()
                 , lineHeight = 12.sp, color= ifv(current == it.value, Color.White, Color.Gray), fontSize = 12.sp, fontWeight = FontWeight.Medium)
 
@@ -2606,7 +2200,7 @@ fun RepeatConfigItemView(label: String, allowEmpty: Boolean = true,  value: Stri
                         openDialog = false
                     }, onConfirm = {
                         openDialog = false
-                        onValueChange("${nums[hourState.currentIndex].value}:${units[minuteState.currentIndex].value}")
+                        onValueChange("${nums[hourState.currentIndexSnapshot].value}:${units[minuteState.currentIndexSnapshot].value}")
                     })
                 }
             }

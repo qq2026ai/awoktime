@@ -47,6 +47,8 @@ import cn.jianyun.worktime.ui.component.nav.HeaderView
 import cn.jianyun.worktime.ui.component.nav.LeadingHintView
 import cn.jianyun.worktime.ui.component.nav.SmallTipText
 import cn.jianyun.worktime.ui.theme.DeleteColor
+import cn.jianyun.worktime.util.goBack
+import cn.jianyun.worktime.util.toPage
 import com.alibaba.fastjson2.JSON
 import com.alibaba.fastjson2.toJSONString
 
@@ -74,7 +76,7 @@ fun TimeworkDefaultConfigEditView(navHostController: NavHostController, argument
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)) {
                 HeaderView(title= ifv(editItem.uuid == "", "添加", "编辑"), backAction = {
-                    navHostController.popBackStack()
+                    goBack(navHostController)
                 })
                 Column(modifier = Modifier
                     .padding(10.dp, 25.dp)
@@ -104,6 +106,7 @@ fun TimeworkDefaultConfigEditView(navHostController: NavHostController, argument
                                 if(!editWorkItem.onlyOver){
                                     TimePeriodPickerItemView3(
                                         label = "正班时长",
+                                        minuteStep = viewModel.appConfig.fetchMinuteStep(),
                                         value = editWorkItem.baseSalaryTime,
                                         onValueChange = {
                                             viewModel.editWorkItem = editWorkItem.copy(baseSalaryTime = it)
@@ -126,6 +129,7 @@ fun TimeworkDefaultConfigEditView(navHostController: NavHostController, argument
                                 if(editWorkItem.overTime) {
                                     TimePeriodPickerItemView3(
                                         label = "加班时长",
+                                        minuteStep = viewModel.appConfig.fetchMinuteStep(),
                                         value = editWorkItem.overSalaryTime,
                                         onValueChange = {
                                             viewModel.editWorkItem = editWorkItem.copy(overSalaryTime = it)
@@ -150,11 +154,56 @@ fun TimeworkDefaultConfigEditView(navHostController: NavHostController, argument
                                 InputNumberView(label = "日结工资", decimal = true, value = editWorkItem.amount, unit="元", onValueChange = {
                                     viewModel.editWorkItem = editWorkItem.copy(amount = it.trim())
                                 })
+
+                                if(viewModel.appConfig.needDayTime){
+                                    TimePickerItemView3(
+                                        label = "上班时间",
+                                        allowEmpty = true,
+                                        minuteStep = viewModel.appConfig.fetchMinuteStep(),
+                                        placeholder = "选填",
+                                        value = editWorkItem.beginTime,
+                                        onValueChange = {
+                                            viewModel.editWorkItem = editWorkItem.copy(beginTime = it)
+                                        }
+                                    )
+                                    TimePickerItemView3(
+                                        label = "下班时间",
+                                        allowEmpty = true,
+                                        minuteStep = viewModel.appConfig.fetchMinuteStep(),
+                                        placeholder = "选填",
+                                        value = editWorkItem.endTime,
+                                        onValueChange = {
+                                            viewModel.editWorkItem = editWorkItem.copy(endTime = it)
+                                        }
+                                    )
+                                    TimePeriodPickerItemView3(
+                                        label = "休息时长",
+                                        allowEmpty = true,
+                                        minuteStep = viewModel.appConfig.fetchMinuteStep(),
+                                        placeholder = "选填",
+                                        value = editWorkItem.restTime,
+                                        onValueChange = {
+                                            viewModel.editWorkItem = editWorkItem.copy(restTime = it)
+                                        }
+                                    )
+                                }
+//                                else if(viewModel.appConfig.needDayPeriod) {
+//                                    TimePeriodPickerItemView3(
+//                                        label = "工作时长",
+//                                        minuteStep = viewModel.appConfig.fetchMinuteStep(),
+//                                        value = editWorkItem.baseSalaryTime,
+//                                        onValueChange = {
+//                                            viewModel.editWorkItem = editWorkItem.copy(baseSalaryTime = it)
+//                                        }
+//                                    )
+//                                }
                             }
 
                             if(editWorkItem.mode == "time"){
                                 TimePickerItemView3(
                                     label = "上班时间",
+                                    minuteStep = viewModel.appConfig.fetchMinuteStep(),
+
                                     value = editWorkItem.beginTime,
                                     onValueChange = {
                                         viewModel.editWorkItem = editWorkItem.copy(beginTime = it)
@@ -163,6 +212,8 @@ fun TimeworkDefaultConfigEditView(navHostController: NavHostController, argument
 
                                 TimePickerItemView3(
                                     label = "下班时间",
+                                    minuteStep = viewModel.appConfig.fetchMinuteStep(),
+
                                     value = editWorkItem.endTime,
                                     onValueChange = {
                                         viewModel.editWorkItem = editWorkItem.copy(endTime = it)
@@ -172,6 +223,8 @@ fun TimeworkDefaultConfigEditView(navHostController: NavHostController, argument
                                 TimePeriodPickerItemView3(
                                     label = "休息时长",
                                     allowEmpty = true,
+                                    minuteStep = viewModel.appConfig.fetchMinuteStep(),
+
                                     value = editWorkItem.restTime,
                                     onValueChange = {
                                         viewModel.editWorkItem = editWorkItem.copy(restTime = it)
@@ -197,7 +250,7 @@ fun TimeworkDefaultConfigEditView(navHostController: NavHostController, argument
                             SmallTipText(text = "当前薪水为空，建议先添加一个再来操作", color= DeleteColor)
                             Blank()
                             LongOkButton("添加薪水") {
-                                navHostController.navigateTo(TimeworkRouter.TimeworkSalaryEdit.route, bundleOf("model" to TimeworkSalary().toJSONString()))
+                                toPage(navHostController,TimeworkRouter.TimeworkSalaryEdit.route, bundleOf("model" to TimeworkSalary().toJSONString()))
                             }
                             Blank()
                         }
@@ -234,7 +287,7 @@ fun TimeworkDefaultConfigEditView(navHostController: NavHostController, argument
 
                             Blank()
                             LongOkButton("添加补贴") {
-                                navHostController.navigateTo(TimeworkRouter.TimeworkAwardEdit.route, bundleOf("model" to TimeworkAward(type="award").toJSONString()))
+                                toPage(navHostController,TimeworkRouter.TimeworkAwardEdit.route, bundleOf("model" to TimeworkAward(type="award").toJSONString()))
                             }
                             Blank()
                         }
@@ -270,7 +323,7 @@ fun TimeworkDefaultConfigEditView(navHostController: NavHostController, argument
 
                             Blank()
                             LongOkButton("添加扣款") {
-                                navHostController.navigateTo(TimeworkRouter.TimeworkAwardEdit.route, bundleOf("model" to TimeworkAward(type="fine").toJSONString()))
+                                toPage(navHostController,TimeworkRouter.TimeworkAwardEdit.route, bundleOf("model" to TimeworkAward(type="fine").toJSONString()))
                             }
                             Blank()
                         }

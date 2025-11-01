@@ -23,9 +23,6 @@ interface BaseApi {
     suspend fun listUserFeedback(@Query("userId") userId: String): ApiResult<List<FeedbackModel>>
 
 
-
-
-
     @GET("/payApi/alipay/makeAppPay")
     suspend fun sdkRequest(@Query("app") app: String,@Query("platform") platform: String,@Query("uid") uid: String,@Query("type") type: String,@Query("testPay") testPay: Boolean = false): ApiResult<String>
 

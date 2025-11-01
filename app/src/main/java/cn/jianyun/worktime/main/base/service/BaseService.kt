@@ -39,7 +39,7 @@ interface BaseService {
 
     //业务路径
     fun getWorkSpace(): String {
-        return "SuperPlan/${getBizName()}/Backup/"
+        return "App/${getBizName()}/"
     }
 
     //刷新小组件

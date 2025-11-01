@@ -118,14 +118,9 @@ fun TimeworkSalaryEditView(navHostController: NavHostController, arguments: Bund
                                     viewModel.editItem = editItem.copy(amount = it)
                                 }, options = listOf("1.5", "2", "3"))
 
-
-
-
                                 if(editItem.amount != "" && editItem.refSalary != ""){
                                     ShownItemView(label = "加班薪水", value = "${editItem.makeShowValue(viewModel.datalist)}")
                                 }
-
-
 
                             }
                             else{

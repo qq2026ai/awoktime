@@ -1,7 +1,6 @@
 package cn.jianyun.worktime.main.setting.user
 
 
-
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,24 +13,19 @@ import androidx.compose.ui.unit.sp
 import androidx.core.os.bundleOf
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
-import cn.jianyun.worktime.R
 import cn.jianyun.worktime.main.Router
 import cn.jianyun.worktime.main.navigateTo
-import cn.jianyun.worktime.main.setting.cloud.jgy.JgyBindView
 import cn.jianyun.worktime.model.FormType
-import cn.jianyun.worktime.module.base.router.WebDAVRouter
 import cn.jianyun.worktime.ui.component.nav.AppLogoView
 import cn.jianyun.worktime.util.Blank
 import cn.jianyun.worktime.util.MyWebdavTool
 import cn.jianyun.worktime.util.ifv
 import cn.jianyun.worktime.vm.AppSettingViewModel
 import cn.jianyun.worktime.ui.component.form.ConfirmDialog
-import cn.jianyun.worktime.ui.component.form.FullDialog
 import cn.jianyun.worktime.ui.component.form.GroupView
 import cn.jianyun.worktime.ui.component.form.InputItemView
 import cn.jianyun.worktime.ui.component.form.LongCancelButton
 import cn.jianyun.worktime.ui.component.form.LongOkButton
-import cn.jianyun.worktime.ui.component.form.SelfDialog
 import cn.jianyun.worktime.ui.component.form.SettingGroupView
 import cn.jianyun.worktime.ui.component.nav.HeaderIcon
 import cn.jianyun.worktime.ui.component.nav.IconFont
@@ -47,6 +41,7 @@ import cn.jianyun.worktime.ui.theme.DeleteColor
 import cn.jianyun.worktime.ui.theme.PrimaryColor
 import cn.jianyun.worktime.ui.theme.ThemeColor
 import cn.jianyun.worktime.ui.theme.VipColor
+import cn.jianyun.worktime.util.toPage
 import com.alibaba.fastjson2.toJSONString
 
 @Composable
@@ -54,7 +49,6 @@ fun UserDetailView(navHostController: NavHostController) {
     val viewModel = hiltViewModel<AppSettingViewModel>()
     viewModel.tryReload()
     viewModel.initWebDavData()
-
     var readonly = !viewModel.formType.isForm("edit")
 
     PageView(navHostController = navHostController, title = "我的信息", rightTool = {
@@ -85,7 +79,6 @@ fun UserDetailView(navHostController: NavHostController) {
                 }
             }
         }
-
         LeadingHintView(ifv(readonly, "其他信息", "编辑信息")){
             if(readonly){
                 SmallLinkText(text = "编辑") {
@@ -99,6 +92,9 @@ fun UserDetailView(navHostController: NavHostController) {
             }
         }
         SettingGroupView {
+            InputItemView(label = "ID", readonly = true, value = viewModel.loginUser.uuid,  onValueChange = {
+
+            })
             InputItemView(label = "昵称", readonly = readonly, value = viewModel.loginUser.nickname,  onValueChange = {
                 viewModel.loginUser = viewModel.loginUser.copy(nickname = it)
             })
@@ -110,6 +106,9 @@ fun UserDetailView(navHostController: NavHostController) {
             })
             InputItemView(label = "城市", readonly = readonly,value = viewModel.loginUser.city,  onValueChange = {
                 viewModel.loginUser = viewModel.loginUser.copy(city = it)
+            })
+
+            InputItemView(label = "天数", readonly = true,value = "" + viewModel.baseRepository.registDay + "天" ,  onValueChange = {
             })
         }
 
@@ -125,12 +124,18 @@ fun UserDetailView(navHostController: NavHostController) {
         Blank()
         Blank()
 
+        if(viewModel.isVip()){
+            LongCancelButton("专属会员QQ群号:1037038247") {
+                viewModel.baseRepository.copyData("1037038247", true)
+            }
+        }
+
         LeadingHintView ("我的云备份账号")
         Blank()
 
         viewModel.tempWebDavUsers.forEach{
             GroupView(verticalPadding = 15.dp, modifier= Modifier.clickable {
-                navHostController.navigateTo(Router.WebDAV.route, bundleOf("model" to it.toJSONString()))
+                toPage(navHostController, Router.WebDAV.route, bundleOf("model" to it.toJSONString()))
             }) {
                 TwoColumnView {
                     Column {

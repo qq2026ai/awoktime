@@ -7,6 +7,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import cn.jianyun.worktime.hilt.respo.BaseRepository
 import cn.jianyun.worktime.model.FormType
+import cn.jianyun.worktime.util.base64
 import cn.jianyun.worktime.util.mlog
 
 abstract class BaseViewModel: ViewModel() {
@@ -24,7 +25,7 @@ abstract class BaseViewModel: ViewModel() {
     fun tryReload(key: String = ""){
         currentPage = key
         var flag = getRepository().isNeedReload(currentPage, oldSid)
-        mlog("try reload page", currentPage, getRepository().currentPage,  flag)
+        mlog("try reload page", currentPage, oldSid, getRepository().sid)
         if(flag) {
             oldSid = getRepository().sid
             reload()

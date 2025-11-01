@@ -33,6 +33,7 @@ sealed class Router(open val route: String) {
     object LocalBackup: Router("LocalBackup")
     object NotifySetting: Router("NotifySetting")
 
+    object VipPage: Router("VipPage")
     object BatchAdd: Router("BatchAdd")
     object BatchDelete: Router("BatchDelete")
     object ImportData: Router("ImportData")

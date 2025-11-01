@@ -31,10 +31,7 @@ abstract class BaseCloudViewModel: ViewModel() {
     var tip: FormType by mutableStateOf(FormType(type=""))
     var currentCloudData by mutableStateOf(BasicCloudData())
     var backType by mutableStateOf("local")
-
-
     var hasLoadCloud by mutableStateOf(false)
-
     var isEmpty by mutableStateOf(true)
 
     fun getRepository(): BaseRepository {

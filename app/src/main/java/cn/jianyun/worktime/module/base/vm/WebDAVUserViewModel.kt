@@ -114,7 +114,7 @@ class WebDAVUserViewModel @Inject constructor(
             baseRepository.reload()
             saveToServer()
             reload()
-            navHostController.popBackStack()
+            goBack(navHostController)
         }
     }
 

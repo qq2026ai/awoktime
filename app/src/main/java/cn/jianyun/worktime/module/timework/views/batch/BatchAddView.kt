@@ -1,7 +1,6 @@
 package cn.jianyun.worktime.module.timework.views.batch
 
 
-import android.provider.Settings.Panel
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.Text
@@ -47,6 +46,7 @@ import cn.jianyun.worktime.ui.component.nav.VerticalRow
 import cn.jianyun.worktime.util.Blank
 import cn.jianyun.worktime.util.SelectUtil
 import cn.jianyun.worktime.util.oneLine
+import cn.jianyun.worktime.util.toVipPage
 
 @Composable
 fun BatchAddView(navHostController: NavHostController) {
@@ -94,11 +94,20 @@ fun BatchAddView(navHostController: NavHostController) {
             if(viewModel.defaultConfigs.isNotEmpty()){
                 Blank()
                 FlowTagView(options = viewModel.defaultConfigs.map{it.toSelect()}, onClick = {
-                    viewModel.makeDefaultSign(it)
+                    if(viewModel.baseRepository.isVip()){
+                        viewModel.makeDefaultSign(it)
+                    }
+                    else{
+                        toVipPage(navHostController)
+                    }
                 })
             }
             Blank()
             LongOkButton("批量工时打卡") {
+                if(!viewModel.baseRepository.isVip()){
+                    toVipPage(navHostController)
+                    return@LongOkButton
+                }
                 if(viewModel.salarys.isEmpty()) {
                     viewModel.toast("请先去添加薪水再来打卡")
                 }
@@ -110,6 +119,10 @@ fun BatchAddView(navHostController: NavHostController) {
             Blank()
             TwoColumnView {
                 CancelButton("补贴", modifier= Modifier.weight(1f)) {
+                    if(!viewModel.baseRepository.isVip()){
+                        toVipPage(navHostController)
+                        return@CancelButton
+                    }
                     if(viewModel.awards.filter{it.type == "award"}.isEmpty()){
                         viewModel.toast("请先去添加一个补贴项再来打卡")
                     }
@@ -122,6 +135,10 @@ fun BatchAddView(navHostController: NavHostController) {
                 }
                 Blank()
                 CancelButton("扣款", modifier= Modifier.weight(1f)) {
+                    if(!viewModel.baseRepository.isVip()){
+                        toVipPage(navHostController)
+                        return@CancelButton
+                    }
                     if(viewModel.awards.filter{it.type == "fine"}.isEmpty()){
                         viewModel.toast("请先去添加一个扣款项再来打卡")
                     }
@@ -135,6 +152,10 @@ fun BatchAddView(navHostController: NavHostController) {
                 }
                 Blank()
                 CancelButton("请假", modifier= Modifier.weight(1f)) {
+                    if(!viewModel.baseRepository.isVip()){
+                        toVipPage(navHostController)
+                        return@CancelButton
+                    }
                     if(!viewModel.hasEmptyChooseDates()){
                         viewModel.editWorkItem = TimeworkData(mode = "leave")
                         viewModel.formType = FormType("rest")
@@ -143,6 +164,10 @@ fun BatchAddView(navHostController: NavHostController) {
                 }
                 Blank()
                 CancelButton("休息", modifier= Modifier.weight(1f)) {
+                    if(!viewModel.baseRepository.isVip()){
+                        toVipPage(navHostController)
+                        return@CancelButton
+                    }
                     if(!viewModel.hasEmptyChooseDates()){
                         viewModel.editWorkItem = TimeworkData(mode = "rest")
                         viewModel.formType = FormType("rest")
@@ -157,6 +182,10 @@ fun BatchAddView(navHostController: NavHostController) {
                 if(viewModel.chooseDates.isNotEmpty()){
                     LeadingHintView("批量操作")
                     LongOk2Button("批量删除打卡记录") {
+                        if(!viewModel.baseRepository.isVip()){
+                            toVipPage(navHostController)
+                            return@LongOk2Button
+                        }
                         viewModel.deleteType = FormType("batchDelete")
                     }
                 }
@@ -190,19 +219,24 @@ fun BatchAddView(navHostController: NavHostController) {
             Blank(40.dp)
 
             if(viewModel.formType.isForm("sign")) {
-                MakeSignView(viewModel = viewModel)
+                MakeSignView(viewModel = viewModel, navHostController= navHostController)
             }
             if(viewModel.formType.isForm("award")) {
                 MakeAwardView(viewModel = viewModel, navHostController)
             }
             if(viewModel.formType.isForm("rest")) {
-                MakeRestView(viewModel = viewModel)
+                MakeRestView(viewModel = viewModel, navHostController= navHostController)
             }
 
 
             if(viewModel.deleteType.isForm("batchDelete")){
                 DeleteDialog(title= "批量删除有风险，确定要继续吗？", okAction = {
-                    viewModel.doBatchDelete()
+                    if(viewModel.baseRepository.isVip()){
+                        viewModel.doBatchDelete()
+                    }
+                    else{
+                        toVipPage(navHostController)
+                    }
                 }) {
                     viewModel.deleteType = FormType()
                 }

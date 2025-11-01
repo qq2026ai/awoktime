@@ -113,4 +113,15 @@ class TimeworkProjectViewModel @Inject constructor(
         }
     }
 
+    fun doClear() {
+        viewModelScope.launch {
+            datalist.forEach {
+                if(it.uuid != currentProjectId) {
+                    timeworkService.projectDao.delete(it)
+                }
+            }
+            reload()
+        }
+    }
+
 }

@@ -195,9 +195,9 @@ class BatchAddViewModel @Inject constructor(
                     }
                     if(it.mode == "day"){
                         item.dayMoney = MyDataTool.plusPriceWithString(item.dayMoney, it.amount)
-
                         monthStatResult.dayCount = MyDataTool.plusNum(monthStatResult.dayCount, "1").toString()
                         monthStatResult.dayMoney = MyDataTool.plusPriceWithString(monthStatResult.dayMoney, it.amount)
+                        monthStatResult.dayHour = MyDataTool.plusTime(monthStatResult.dayHour, it.fetchBaseHour())
                     }
 
                     if(it.mode == "leave"){

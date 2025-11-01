@@ -3,6 +3,7 @@ package cn.jianyun.worktime.module.timework.dto
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import cn.jianyun.worktime.module.timework.model.TimeworkAppConfig
+import cn.jianyun.worktime.util.ifv
 import com.alibaba.fastjson2.JSON
 
 
@@ -52,6 +53,10 @@ data class TimeworkAppConfigDTO(
     var projectUuid:String = "", //项目
     var remark: String = "", //描述
     var gmtCreate: String = "", //创建时间
+
+    var needEveryMinute: Boolean = false, //日结时间
+    var needDayTime: Boolean = true, //日结时间
+
 ){
     fun isAdd():Boolean{
         return true
@@ -59,6 +64,10 @@ data class TimeworkAppConfigDTO(
 
     fun isValid(): String {
         return "ok"
+    }
+
+    fun fetchMinuteStep(): Int {
+        return ifv(needEveryMinute, 1, 5)
     }
 
     fun isMondayFirst(): Boolean{

@@ -42,7 +42,7 @@ fun WebDAVUserDocView(viewModel: WebDAVUserViewModel){
         PanelView("什么是Koofr？",  dialog = true) {
             Text("""
            Koofr本身是一个网盘，同时还支持绑定第三方网盘，并且它向用户免费提供WebDAV协议访问服务，
-           使得用户可以直接通过它来对第三方网盘进行读取和写入文件，比如微软OneDrive,谷歌GoogleDrive,Dropbox，
+           使得用户可以直接通过它来对第三方网盘进行读取和写入文件，比如微软OneDrive,谷歌GoogleDrive,Dropbox，(我们将来支持对这些平台的访问）
            Koofr自己也向用户提供10GB的存储空间，只是这个平台访问速度比较慢，但是不影响我们数据的云备份
         """.oneLine(), fontSize = 13.sp)
             Blank()
@@ -52,13 +52,26 @@ fun WebDAVUserDocView(viewModel: WebDAVUserViewModel){
             Blank()
         }
 
-        PanelView("如何绑定微软OneDrive空间？", """
-            由于微软OneDrive空间并没有直接向个人提供WebDAV协议访问服务，但是用户可以借用Koofr平台，先将OneDrive绑定到Koofr,然后通过Koofr免费提供的webDAV协议向OneDrive读取和写入文件
-        """.oneLine(), dialog = true)
+//        PanelView("什么是Koofr？",  dialog = true) {
+//            Text("""
+//           Koofr本身是一个网盘，同时还支持绑定第三方网盘，并且它向用户免费提供WebDAV协议访问服务，
+//           使得用户可以直接通过它来对第三方网盘进行读取和写入文件，比如微软OneDrive,谷歌GoogleDrive,Dropbox，
+//           Koofr自己也向用户提供10GB的存储空间，只是这个平台访问速度比较慢，但是不影响我们数据的云备份
+//        """.oneLine(), fontSize = 13.sp)
+//            Blank()
+//            LongOkButton("注册koofr账号") {
+//                uriHandler.openUri("https://k00.fr/m8v2gygx")
+//            }
+//            Blank()
+//        }
 
-        PanelView("如何绑定GoogleDrive空间？", """
-           由于GoogleDrive空间并没有直接向个人提供WebDAV协议访问服务，但是用户可以借用Koofr平台，先将GoogleDrive绑定到Koofr,然后通过Koofr免费提供的webDAV协议向GoogleDrive读取和写入文件
-        """.oneLine(), dialog = true)
+//        PanelView("如何绑定微软OneDrive空间？", """
+//            由于微软OneDrive空间并没有直接向个人提供WebDAV协议访问服务，但是用户可以借用Koofr平台，先将OneDrive绑定到Koofr,然后通过Koofr免费提供的webDAV协议向OneDrive读取和写入文件
+//        """.oneLine(), dialog = true)
+//
+//        PanelView("如何绑定GoogleDrive空间？", """
+//           由于GoogleDrive空间并没有直接向个人提供WebDAV协议访问服务，但是用户可以借用Koofr平台，先将GoogleDrive绑定到Koofr,然后通过Koofr免费提供的webDAV协议向GoogleDrive读取和写入文件
+//        """.oneLine(), dialog = true)
 
     }
 

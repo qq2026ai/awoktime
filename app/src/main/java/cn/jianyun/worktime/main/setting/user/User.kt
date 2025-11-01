@@ -39,7 +39,7 @@ data class User(
     }
 
     fun isVip(): Boolean {
-        return (vipDate == "永久" || vipDate.parseDate() > Date()) && vipName != ""
+        return (vipDate == "永久" || vipDate == "forever" || vipDate.parseDate() > Date()) && vipName != ""
     }
 
     fun showName(): String{
@@ -65,7 +65,7 @@ data class User(
 
     fun isRegistValid(): String {
         if(username.trim() == ""){
-            return "邮箱账号不能为空"
+            return "账号不能为空"
         }
         if(password.trim() == ""){
             return "密码不能为空"
@@ -73,9 +73,9 @@ data class User(
         if(confirmPassword == ""){
             return "确认密码不能为空"
         }
-        if(!isValidEmail(username)) {
-            return "邮箱账号格式不正确"
-        }
+//        if(!isValidEmail(username)) {
+//            return "邮箱账号格式不正确"
+//        }
         if(password.length < 6){
             return "密码长度不能少于6位"
         }

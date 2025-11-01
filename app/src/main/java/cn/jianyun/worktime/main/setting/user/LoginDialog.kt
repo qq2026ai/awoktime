@@ -59,7 +59,7 @@ fun LoginDialog(viewModel: AppSettingViewModel, type: String = "", backAction: (
         }
 
         Column {
-            InnerInputItemView(label = "邮箱", value = viewModel.loginUser.username, onValueChange = {
+            InnerInputItemView(label = "账号", placeholder = "手机号或者邮箱", value = viewModel.loginUser.username, onValueChange = {
                 viewModel.loginUser = viewModel.loginUser.copy(username = it)
             })
             Blank()

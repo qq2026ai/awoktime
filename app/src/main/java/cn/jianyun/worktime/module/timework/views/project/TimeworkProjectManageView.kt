@@ -2,14 +2,17 @@ package cn.jianyun.worktime.module.timework.views.project
 
 
 import android.annotation.SuppressLint
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import cn.jianyun.worktime.main.Router
 import cn.jianyun.worktime.model.FormType
 import cn.jianyun.worktime.module.timework.model.TimeworkProject
 import cn.jianyun.worktime.module.timework.vm.TimeworkProjectViewModel
@@ -28,6 +31,7 @@ import cn.jianyun.worktime.ui.component.nav.TagView
 import cn.jianyun.worktime.ui.component.nav.VerticalRow
 import cn.jianyun.worktime.ui.theme.DeleteColor
 import cn.jianyun.worktime.ui.theme.ThemeColor
+import cn.jianyun.worktime.util.toVipPage
 
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
@@ -51,8 +55,13 @@ fun TimeworkProjectManageView(navHostController: NavHostController) {
             }
             else{
                 LongOkButton("添加项目") {
-                    viewModel.editItem = TimeworkProject()
-                    viewModel.formType = FormType.add()
+                    if(viewModel.baseRepository.isVip()){
+                        viewModel.editItem = TimeworkProject()
+                        viewModel.formType = FormType.add()
+                    }
+                    else{
+                        toVipPage(navHostController)
+                    }
                 }
             }
         }) {
@@ -85,6 +94,12 @@ fun TimeworkProjectManageView(navHostController: NavHostController) {
                     }
                 }
             }
+
+            if(viewModel.datalist.size > 5){
+                Text("只保留当前清空其它项目", fontSize = 12.sp, modifier=Modifier.clickable {
+                    viewModel.formType = FormType.clear()
+                })
+            }
         }
 
         if(viewModel.formType.isAdd() || viewModel.formType.isUpdate()){
@@ -105,6 +120,14 @@ fun TimeworkProjectManageView(navHostController: NavHostController) {
                     viewModel.resetForm()
                 }
             )
+        }
+
+        if(viewModel.formType.isClear()){
+            DeleteDialog(title = "真的要继续删除其他项目吗？",okAction = {
+                viewModel.doClear()
+            }) {
+                viewModel.resetForm()
+            }
         }
 
         if(viewModel.formType.isForm("detail")){

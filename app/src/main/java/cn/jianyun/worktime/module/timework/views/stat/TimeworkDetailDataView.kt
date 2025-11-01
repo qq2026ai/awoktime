@@ -2,11 +2,12 @@ package cn.jianyun.worktime.module.timework.views.stat
 
 
 
-
 import android.annotation.SuppressLint
 import android.os.Bundle
+import android.os.Environment
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -32,22 +33,33 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import cn.jianyun.worktime.model.FormType
 import cn.jianyun.worktime.module.timework.model.TimeworkAwardData
 import cn.jianyun.worktime.module.timework.model.TimeworkData
 import cn.jianyun.worktime.module.timework.vm.TimeworkDetailDataViewModel
+import cn.jianyun.worktime.ui.component.form.GroupView
+import cn.jianyun.worktime.ui.component.form.LoadingDialog
+import cn.jianyun.worktime.ui.component.form.LongOkButton
+import cn.jianyun.worktime.ui.component.form.SegmentPickerView
+import cn.jianyun.worktime.ui.component.form.TipDialog
 import cn.jianyun.worktime.ui.component.model.kt.RangeDate
+import cn.jianyun.worktime.ui.component.nav.CenterColumn
+import cn.jianyun.worktime.ui.component.nav.CenterRow
 import cn.jianyun.worktime.ui.component.nav.DateRangeChooseView
+import cn.jianyun.worktime.ui.component.nav.HeaderView
+import cn.jianyun.worktime.ui.theme.ThemeColor
+import cn.jianyun.worktime.util.Blank
 import cn.jianyun.worktime.util.MyDataTool
 import cn.jianyun.worktime.util.SelectUtil
 import cn.jianyun.worktime.util.goBack
 import cn.jianyun.worktime.util.mainBg
-import cn.jianyun.worktime.ui.component.form.SegmentPickerView
-import cn.jianyun.worktime.ui.component.nav.CenterColumn
-import cn.jianyun.worktime.ui.component.nav.CenterRow
-import cn.jianyun.worktime.ui.component.nav.HeaderView
+import cn.jianyun.worktime.util.toVipPage
 import com.alibaba.fastjson2.JSON
+
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
@@ -69,122 +81,170 @@ fun TimeworkDetailDataView(navHostController: NavHostController, arguments: Bund
                     .fillMaxSize()
                     .background(MaterialTheme.colorScheme.background)
             ) {
-                HeaderView(title = "工时数据明细", backAction = {
+                HeaderView(title = "工时数据明细及导出", backAction = {
                     goBack(navHostController)
+                }, rightTool = {
+                    Row(){
+                        Text("帮助", modifier=Modifier.clickable {
+                            viewModel.formType = FormType("tip")
+                        })
+                    }
                 })
-
                 CenterColumn {
                     DateRangeChooseView(value = viewModel.rangeDate){
                         viewModel.rangeDate = it
                         viewModel.reloadData()
                     }
                 }
-
                 CenterRow(padding=12.dp) {
                     SegmentPickerView(options = SelectUtil.WORK_DATA_TYPES, value=viewModel.currentMode, onChange = {
                         viewModel.currentMode = it
                     })
                 }
+                Box(modifier =Modifier, contentAlignment = Alignment.BottomCenter){
+                    Box(modifier=Modifier.padding(bottom=80.dp)) {
+                        if(viewModel.currentMode == "hour"){
+                            Table(
+                                modifier = Modifier
+                                    .padding(horizontal = 8.dp)
+                                    .mainBg(6.dp)
+                                    .padding(8.dp)
+                                    .fillMaxSize(),
+                                columnCount = 8,
+                                rowCount = viewModel.workHourList.size + 1,
+                                afterRow = {
+                                    Text("", modifier = Modifier
+                                        .background(Color.Gray.copy(0.12f))
+                                        .width(
+                                            listOf(
+                                                120,
+                                                100,
+                                                180,
+                                                100,
+                                                180,
+                                                120,
+                                                120,
+                                                200
+                                            ).sum().dp
+                                        )
+                                        .height(1.dp))
+                                },
+                                cellContent = { columnIndex, rowIndex ->
+                                    if(rowIndex == 0){
+                                        getHourHeader(x = columnIndex)
+                                    }
+                                    else{
+                                        getHourContent(viewModel.workHourList[rowIndex-1], columnIndex)
+                                    }
+                                })
+                        }
+                        else if(viewModel.currentMode == "time"){
+                            Table(
+                                modifier = Modifier
+                                    .padding(horizontal = 8.dp)
+                                    .mainBg(6.dp)
+                                    .padding(8.dp)
+                                    .fillMaxSize(),
+                                columnCount = 8,
+                                rowCount = viewModel.workTimeList.size+ 1,
+                                afterRow = {
+                                    Text("", modifier = Modifier
+                                        .background(Color.Gray.copy(0.12f))
+                                        .width(
+                                            listOf(
+                                                120,
+                                                80,
+                                                80,
+                                                100,
+                                                100,
+                                                150,
+                                                100,
+                                                200
+                                            ).sum().dp
+                                        )
+                                        .height(1.dp))
+                                },
+                                cellContent = { columnIndex, rowIndex ->
+                                    if(rowIndex == 0){
+                                        getTimeHeader(x = columnIndex)
+                                    }
+                                    else{
+                                        getTimeContent(viewModel.workTimeList[rowIndex-1], columnIndex)
+                                    }
+                                })
+                        }
+                        else if(viewModel.currentMode == "day"){
+                            Table(
+                                modifier = Modifier
+                                    .padding(horizontal = 8.dp)
+                                    .mainBg(6.dp)
+                                    .padding(8.dp)
+                                    .fillMaxSize(),
+                                columnCount = 4,
+                                rowCount = viewModel.workDayList.size + 1,
+                                afterRow = {
+                                    Text("", modifier = Modifier
+                                        .background(Color.Gray.copy(0.12f))
+                                        .width(listOf(120, 100, 220, 220).sum().dp)
+                                        .height(1.dp))
+                                },
+                                cellContent = { columnIndex, rowIndex ->
+                                    if(rowIndex == 0){
+                                        getDayHeader(x = columnIndex)
+                                    }
+                                    else{
+                                        getDayContent(viewModel.workDayList[rowIndex-1], columnIndex)
+                                    }
+                                })
+                        }
+                        else if(viewModel.currentMode == "award"){
+                            Table(
+                                modifier = Modifier
+                                    .padding(horizontal = 8.dp)
+                                    .mainBg(6.dp)
+                                    .padding(8.dp)
+                                    .fillMaxSize(),
+                                columnCount = 5,
+                                rowCount = viewModel.awardList.size + 1,
+                                afterRow = {
+                                    Text("", modifier = Modifier
+                                        .background(Color.Gray.copy(0.12f))
+                                        .width(listOf(120, 100, 120, 180, 200).sum().dp)
+                                        .height(1.dp))
+                                },
+                                cellContent = { columnIndex, rowIndex ->
+                                    if(rowIndex == 0){
+                                        getAwardHeader(x = columnIndex)
+                                    }
+                                    else{
+                                        getAwardContent(viewModel.awardList[rowIndex-1], columnIndex)
+                                    }
+                                })
+                        }
+                    }
 
-                if(viewModel.currentMode == "hour"){
-                    Table(
-                        modifier = Modifier
-                            .padding(horizontal = 8.dp)
-                            .mainBg(6.dp)
-                            .padding(8.dp)
-                            .fillMaxSize(),
-                        columnCount = 8,
-                        rowCount = viewModel.workHourList.size + 1,
-                        afterRow = {
-                            Text("", modifier = Modifier
-                                .background(Color.Gray.copy(0.12f))
-                                .width(listOf(120, 100, 180, 100, 180, 120, 120, 200).sum().dp)
-                                .height(1.dp))
-                        },
-                        cellContent = { columnIndex, rowIndex ->
-                            if(rowIndex == 0){
-                                getHourHeader(x = columnIndex)
+                    GroupView(verticalPadding = 5.dp) {
+                        LongOkButton(label = "导出") {
+                            if(viewModel.baseRepository.isVip()){
+                                viewModel.doExport()
                             }
                             else{
-                                getHourContent(viewModel.workHourList[rowIndex-1], columnIndex)
+                                toVipPage(navHostController)
                             }
-                        })
+                        }
+                    }
                 }
-                else if(viewModel.currentMode == "time"){
-                    Table(
-                        modifier = Modifier
-                            .padding(horizontal = 8.dp)
-                            .mainBg(6.dp)
-                            .padding(8.dp)
-                            .fillMaxSize(),
-                        columnCount = 8,
-                        rowCount = viewModel.workTimeList.size+ 1,
-                        afterRow = {
-                            Text("", modifier = Modifier
-                                .background(Color.Gray.copy(0.12f))
-                                .width(listOf(120, 80, 80, 100, 100, 150, 100, 200).sum().dp)
-                                .height(1.dp))
-                        },
-                        cellContent = { columnIndex, rowIndex ->
-                            if(rowIndex == 0){
-                                getTimeHeader(x = columnIndex)
-                            }
-                            else{
-                                getTimeContent(viewModel.workTimeList[rowIndex-1], columnIndex)
-                            }
-                        })
-                }
-                else if(viewModel.currentMode == "day"){
-                    Table(
-                        modifier = Modifier
-                            .padding(horizontal = 8.dp)
-                            .mainBg(6.dp)
-                            .padding(8.dp)
-                            .fillMaxSize(),
-                        columnCount = 3,
-                        rowCount = viewModel.workDayList.size + 1,
-                        afterRow = {
-                            Text("", modifier = Modifier
-                                .background(Color.Gray.copy(0.12f))
-                                .width(listOf(120, 100, 220).sum().dp)
-                                .height(1.dp))
-                        },
-                        cellContent = { columnIndex, rowIndex ->
-                            if(rowIndex == 0){
-                                getDayHeader(x = columnIndex)
-                            }
-                            else{
-                                getDayContent(viewModel.workDayList[rowIndex-1], columnIndex)
-                            }
-                        })
-                }
-                else if(viewModel.currentMode == "award"){
-                    Table(
-                        modifier = Modifier
-                            .padding(horizontal = 8.dp)
-                            .mainBg(6.dp)
-                            .padding(8.dp)
-                            .fillMaxSize(),
-                        columnCount = 5,
-                        rowCount = viewModel.awardList.size + 1,
-                        afterRow = {
-                            Text("", modifier = Modifier
-                                .background(Color.Gray.copy(0.12f))
-                                .width(listOf(120, 100, 120, 180, 200).sum().dp)
-                                .height(1.dp))
-                        },
-                        cellContent = { columnIndex, rowIndex ->
-                            if(rowIndex == 0){
-                                getAwardHeader(x = columnIndex)
-                            }
-                            else{
-                                getAwardContent(viewModel.awardList[rowIndex-1], columnIndex)
-                            }
-                        })
-                }
-
             }
+            LoadingDialog()
+
+            if(viewModel.formType.isForm("tip")){
+                TipDialog(title = "使用帮助", message = "支持自定义导出日期区间，导出成功后将自动保存至手机下载目录，并支持分享至微信等其他应用，如果不想分享，可以取消此操作即可（毕竟微信可以快速查看导出效果）") {
+                    viewModel.resetForm()
+                }
+            }
+
         }
+
     })
 }
 
@@ -231,7 +291,6 @@ fun getAwardHeader(x: Int) {
     return Text(titles[x], fontSize = 14.sp, modifier = Modifier.width(size[x].dp))
 }
 
-
 @Composable
 fun getTimeHeader(x: Int) {
     val titles = listOf("日期", "上班时间", "下班时间", "休息时长", "合计工时", "上班薪水", "合计薪水", "备注")
@@ -240,8 +299,8 @@ fun getTimeHeader(x: Int) {
 }
 @Composable
 fun getDayHeader(x: Int) {
-    val titles = listOf("日期",  "日结", "备注")
-    val size = listOf(120, 100, 220)
+    val titles = listOf("日期",  "日结",  "工作时长", "备注")
+    val size = listOf(120, 100,  200, 220)
     return Text(titles[x], fontSize = 14.sp, modifier = Modifier.width(size[x].dp))
 }
 
@@ -269,7 +328,8 @@ fun getDayContent(data: TimeworkData, column: Int){
     when(column){
         0 -> info = data.day
         1 -> info = MyDataTool.withUnit(data.amount, "元")
-        2 -> info = data.remark
+        2 -> info = MyDataTool.getShownTime(data.fetchBaseHour(), false)
+        3 -> info = data.remark
     }
     return Text(info, fontSize = 14.sp, modifier = Modifier.padding(0.dp, 2.dp))
 }

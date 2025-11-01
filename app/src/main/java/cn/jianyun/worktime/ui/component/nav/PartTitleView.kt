@@ -61,7 +61,7 @@ fun TagView(tag: String, fontSize: TextUnit = 11.sp, round: Boolean = false, off
     if(hollow){
         Text(tag, fontSize = fontSize, lineHeight = f, color=color, modifier = Modifier
             .radius(r)
-            .tap{
+            .clickable(enabled = onClick != null){
                 if(onClick != null){
                     onClick()
                 }

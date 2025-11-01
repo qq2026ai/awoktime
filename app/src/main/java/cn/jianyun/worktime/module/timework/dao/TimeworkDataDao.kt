@@ -34,6 +34,8 @@ interface TimeworkDataDao {
     @Query("SELECT count(1) from TimeworkData WHERE salaryUuid = :salaryUuid or overSalaryUuid = :salaryUuid")
     suspend fun findSalary(salaryUuid: String): Int
 
+    @Query("SELECT min(gmtCreate) FROM TimeworkData")
+    suspend fun findMinDate(): String
 
 
     @Query("SELECT * FROM TimeworkData WHERE projectUuid = :projectUuid")

@@ -10,6 +10,8 @@ import androidx.navigation.NavHostController
 import cn.jianyun.worktime.hilt.respo.BaseRepository
 import cn.jianyun.worktime.model.FormType
 import cn.jianyun.worktime.module.base.vm.BaseViewModel
+import cn.jianyun.worktime.module.timework.dto.TimeworkAppConfigDTO
+import cn.jianyun.worktime.module.timework.model.TimeworkAppConfig
 import cn.jianyun.worktime.module.timework.model.TimeworkAward
 import cn.jianyun.worktime.module.timework.model.TimeworkAwardData
 import cn.jianyun.worktime.module.timework.model.TimeworkData
@@ -18,6 +20,7 @@ import cn.jianyun.worktime.module.timework.model.TimeworkSalary
 import cn.jianyun.worktime.module.timework.service.TimeworkService
 import cn.jianyun.worktime.util.MyDateTool
 import cn.jianyun.worktime.util.SelectDO
+import cn.jianyun.worktime.util.goBack
 import cn.jianyun.worktime.util.isOk
 import cn.jianyun.worktime.util.mlog
 import cn.jianyun.worktime.util.uuid
@@ -34,6 +37,7 @@ class TimeworkDefaultConfigViewModel @Inject constructor(
     private val timeworkService: TimeworkService
 ) : BaseViewModel() {
 
+    var appConfig by mutableStateOf(TimeworkAppConfigDTO())
     var editItem by mutableStateOf(TimeworkDefaultConfig())
     var datalist by mutableStateOf(listOf<TimeworkDefaultConfig>())
     var awardList by mutableStateOf(listOf<TimeworkAward>())
@@ -57,6 +61,7 @@ class TimeworkDefaultConfigViewModel @Inject constructor(
             datalist = timeworkService.listDefaultConfigByProject(currentProjectId)
             salarys = timeworkService.listSalaryByProject(currentProjectId).filter{it.shown}
             awardList = timeworkService.listAwardByProject(currentProjectId)
+            appConfig = timeworkService.appConfigDao.get()
             mlog("reload data")
         }
     }
@@ -133,7 +138,7 @@ class TimeworkDefaultConfigViewModel @Inject constructor(
                 }
                 baseRepository.reload()
                 formType = FormType()
-                navHostController.popBackStack()
+                goBack(navHostController)
             }
             else{
                 baseRepository.toast(msg)
@@ -147,7 +152,7 @@ class TimeworkDefaultConfigViewModel @Inject constructor(
             resetForm()
             baseRepository.reload()
             reload()
-            navHostController.popBackStack()
+            goBack(navHostController)
         }
     }
 

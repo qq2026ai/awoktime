@@ -145,7 +145,6 @@ fun SelfDialog(cancelable:Boolean = false,  onDismiss: () -> Unit, content:@Comp
     }
 }
 
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FullDialog(onDismiss: () -> Unit, content:@Composable () -> Unit){
@@ -160,9 +159,7 @@ fun FullDialog(onDismiss: () -> Unit, content:@Composable () -> Unit){
             .tap {
 
             }, contentAlignment = Alignment.TopStart){
-            Column(modifier= Modifier
-                .padding(10.dp)
-            ) {
+            Column() {
                 content()
             }
         }
@@ -347,11 +344,7 @@ fun LoadingDialog(label: String = "") {
             }
         }
     }
-
-
 }
-
-
 
 
 @OptIn(ExperimentalMaterial3Api::class)

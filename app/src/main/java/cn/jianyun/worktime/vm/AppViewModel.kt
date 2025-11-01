@@ -10,7 +10,6 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
 import cn.jianyun.worktime.api.ApiResult
 import cn.jianyun.worktime.api.BaseApi
-import cn.jianyun.worktime.api.ShareApi
 import cn.jianyun.worktime.hilt.respo.BaseRepository
 import cn.jianyun.worktime.main.setting.user.User
 import cn.jianyun.worktime.model.AppConfigModel
@@ -20,8 +19,9 @@ import cn.jianyun.worktime.util.goBack
 import cn.jianyun.worktime.util.isOk
 import cn.jianyun.worktime.util.mlog
 import cn.jianyun.worktime.util.withApi
-import cn.jianyun.worktime.main.APPS
+import cn.jianyun.worktime.module.timework.dao.TimeworkDataDao
 import cn.jianyun.worktime.util.CacheUtil
+import cn.jianyun.worktime.util.parseDateTime
 import com.alibaba.fastjson2.JSON
 import com.alipay.sdk.app.PayTask
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -51,6 +51,7 @@ class AppViewModel @Inject constructor(
 @HiltViewModel
 class AppSettingViewModel @Inject constructor(
     val baseRepository: BaseRepository,
+    val timeworkDataDao: TimeworkDataDao,
     val baseApi: BaseApi
 ): ViewModel() {
 
@@ -58,7 +59,7 @@ class AppSettingViewModel @Inject constructor(
     var formType by mutableStateOf(FormType())
     var loginType by mutableStateOf(FormType("login"))
     var loginUser by mutableStateOf(User())
-    var userApps by mutableStateOf(setOf<String>())
+    var initApp by mutableStateOf(false)
     var webDAVUser by mutableStateOf(WebDAVUser())
     var sid by mutableStateOf(0)
 
@@ -118,7 +119,18 @@ class AppSettingViewModel @Inject constructor(
     fun reload(){
         viewModelScope.launch {
             sid = baseRepository.sid
-
+            val registDay = baseRepository.getRegistDay()
+            if(registDay == 0){
+                val minDate = timeworkDataDao.findMinDate()
+                mlog("minDate", minDate)
+                if(minDate != null && minDate.length > 10){
+                    baseRepository.cacheLong("registDay", minDate.parseDateTime().time)
+                    baseRepository.registDay = baseRepository.getRegistDay()
+                }
+            }
+            else{
+                baseRepository.registDay = registDay
+            }
 
             baseRepository.initApp()
             appConfig = baseRepository.getObjectCache("appConfig", AppConfigModel::class.java) ?: AppConfigModel()
@@ -126,20 +138,12 @@ class AppSettingViewModel @Inject constructor(
                 formType = FormType("check")
                 inited = true
             }
-            mlog("app config", appConfig)
             loginUser = baseRepository.loginUser
             brand = baseRepository.brand
             notifyStatus2.putAll(baseRepository.notifyStatus)
             webDAVUser = baseRepository.getWebDAVUser()
-            if(userApps.isEmpty()){
-                delay(1200 + (Math.random() * 100).toLong())
-            }
-            if(appConfig.userApps.isEmpty()){
-                userApps = APPS.map{it.value}.toSet()
-            }
-            else{
-                userApps = appConfig.userApps.split("^").toSet()
-            }
+            delay(300 + (Math.random() * 100).toLong())
+            initApp = true
         }
     }
 
@@ -159,9 +163,11 @@ class AppSettingViewModel @Inject constructor(
     fun refresh(){
         viewModelScope.launch {
             baseRepository.loading()
-            val k = baseRepository.api.fetchUserInfo(loginUser)
-            if(k.success){
-                val userInfo = k.fetchResult() as User
+            var dd =  withApi {
+                baseRepository.api.fetchUserInfo(loginUser)
+            }
+            if(dd.success){
+                val userInfo = dd.fetchResult() as User
                 val config = userInfo.cloudConfig
                 if(config != null && config != ""){
                     val webDavUsers = JSON.parseArray(config, WebDAVUser::class.java)
@@ -172,11 +178,14 @@ class AppSettingViewModel @Inject constructor(
                     initeWebDav = false
                     initWebDavData()
                 }
+                if(userInfo.vipName != ""){
+                    loginUser.vipName = userInfo.vipName
+                    loginUser.vipDate = userInfo.vipDate
+                    baseRepository.makeLogin(loginUser)
+                    baseRepository.reload()
+                    reload()
+                }
             }
-            else{
-
-            }
-            baseRepository.reload()
         }
     }
 
@@ -192,7 +201,6 @@ class AppSettingViewModel @Inject constructor(
         viewModelScope.launch {
             baseRepository.cacheJsonValue("appConfig", appConfig)
             appConfig = baseRepository.getObjectCache("appConfig", AppConfigModel::class.java) ?: AppConfigModel()
-            mlog("app config2", appConfig)
             baseRepository.reload()
         }
     }
@@ -214,14 +222,12 @@ class AppSettingViewModel @Inject constructor(
             loginUser.platform = "android"
             val rst = baseRepository.api.login(loginUser)
             baseRepository.finish()
-
-            print("xx: "+ JSON.toJSONString(rst.fetchResult()))
-
-
             if(rst.success){
-                baseRepository.makeLogin(rst.fetchResult())
+                val ttt = rst.fetchResult()
+                ttt.registTime = loginUser.registTime
+                baseRepository.makeLogin(ttt)
                 baseRepository.toast("登录成功")
-                loginUser = rst.fetchResult()
+                loginUser = ttt
                 formType = FormType()
             }
             else{
@@ -231,7 +237,6 @@ class AppSettingViewModel @Inject constructor(
     }
 
     fun doRegist() {
-
         val msg = loginUser.isRegistValid()
         if(!isOk(msg)){
             return baseRepository.toast(msg)
@@ -242,15 +247,18 @@ class AppSettingViewModel @Inject constructor(
             loginUser.application = "workTime"
             loginUser.platform = "android"
             loginUser.uuid = baseRepository.getUid()
+
             val rst = withApi {
                 baseRepository.api.regist(loginUser)
             }
-
             baseRepository.finish()
             if(rst.success){
                 formType = FormType()
                 print("xx: "+ JSON.toJSONString(rst.fetchResult()))
-                baseRepository.makeLogin(rst.fetchResult())
+                val tt2 = rst.fetchResult()
+                tt2.registTime = loginUser.registTime
+                loginUser = tt2
+                baseRepository.makeLogin(tt2)
             }
             else{
                 baseRepository.toast(rst.message)
@@ -263,10 +271,21 @@ class AppSettingViewModel @Inject constructor(
         viewModelScope.launch {
             baseRepository.loading()
 
-            val rst = baseRepository.api.exit(loginUser)
+            val rst = withApi {
+                baseRepository.api.exit(loginUser)
+            }
             formType = FormType()
             //不论是否成功，都退出
-            baseRepository.makeLogin(User())
+
+            val uu = baseRepository.loginUser
+            uu.nickname = ""
+            uu.username = ""
+            uu.vipDate = ""
+            uu.vipName = ""
+            uu.password = ""
+            uu.confirmPassword = ""
+
+            baseRepository.makeLogin(uu)
             baseRepository.finish()
             baseRepository.reload()
             goBack(navHostController)
@@ -314,7 +333,11 @@ class AppSettingViewModel @Inject constructor(
         }
     }
 
-    fun doPurchase(activity: Activity) {
+    fun refreshInfo() {
+
+    }
+
+    fun doPurchase(activity: Activity, cb: () -> Unit) {
 
         if(!loginUser.isLogin()){
             purchaseFlag = true
@@ -345,6 +368,7 @@ class AppSettingViewModel @Inject constructor(
                             loginUser.makeVip(currentMode)
                             baseRepository.makeLogin(loginUser)
                             toast("购买成功，感谢您的支持")
+                            cb()
                         }
                     }
                     else{
