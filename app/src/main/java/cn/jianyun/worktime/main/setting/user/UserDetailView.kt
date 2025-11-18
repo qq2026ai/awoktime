@@ -8,13 +8,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.os.bundleOf
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import cn.jianyun.worktime.main.Router
-import cn.jianyun.worktime.main.navigateTo
 import cn.jianyun.worktime.model.FormType
 import cn.jianyun.worktime.ui.component.nav.AppLogoView
 import cn.jianyun.worktime.util.Blank
@@ -27,6 +27,7 @@ import cn.jianyun.worktime.ui.component.form.InputItemView
 import cn.jianyun.worktime.ui.component.form.LongCancelButton
 import cn.jianyun.worktime.ui.component.form.LongOkButton
 import cn.jianyun.worktime.ui.component.form.SettingGroupView
+import cn.jianyun.worktime.ui.component.form.ShowInputDialog
 import cn.jianyun.worktime.ui.component.nav.HeaderIcon
 import cn.jianyun.worktime.ui.component.nav.IconFont
 import cn.jianyun.worktime.ui.component.nav.IconView
@@ -38,7 +39,6 @@ import cn.jianyun.worktime.ui.component.nav.TagView
 import cn.jianyun.worktime.ui.component.nav.TwoColumnView
 import cn.jianyun.worktime.ui.component.nav.VerticalRow
 import cn.jianyun.worktime.ui.theme.DeleteColor
-import cn.jianyun.worktime.ui.theme.PrimaryColor
 import cn.jianyun.worktime.ui.theme.ThemeColor
 import cn.jianyun.worktime.ui.theme.VipColor
 import cn.jianyun.worktime.util.toPage
@@ -130,6 +130,10 @@ fun UserDetailView(navHostController: NavHostController) {
             }
         }
 
+        LongCancelButton(label = "我要注销账号") {
+            viewModel.formType = FormType("logOut")
+        }
+
         LeadingHintView ("我的云备份账号")
         Blank()
 
@@ -170,6 +174,15 @@ fun UserDetailView(navHostController: NavHostController) {
             }){
                 viewModel.reset()
             }
+        }
+
+        if(viewModel.formType.isForm("logOut")){
+            ShowInputDialog(value = "", tip="提示:请输入账号密码来确认你身份，注销账号，意味之前购买的会员也会随之失效，但您本地的工时数据，我们不会删除，仅做账号注销喔！", password=false, multiLine = false, keyboardType =  KeyboardType.Password , onValueChange = {
+                viewModel.doLogOut(navHostController, it)
+                false
+            }, onDismiss = {
+                viewModel.reset()
+            })
         }
 
     }

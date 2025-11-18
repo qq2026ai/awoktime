@@ -37,6 +37,12 @@ interface BaseApi {
     suspend fun login(@Body user: User): ApiResult<User>
 
     /**
+     * 用户模块：尝试登录
+     */
+    @POST("/api/user/tryLogin")
+    suspend fun tryLogin(@Body user: User): ApiResult<String>
+
+    /**
      * 用户模块：注册
      */
     @POST("/api/user/regist")

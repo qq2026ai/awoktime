@@ -5,7 +5,6 @@ import cn.jianyun.worktime.module.timework.model.TimeworkAward
 import cn.jianyun.worktime.module.timework.model.TimeworkAwardData
 import cn.jianyun.worktime.module.timework.model.TimeworkData
 import cn.jianyun.worktime.module.timework.model.TimeworkSalary
-import cn.jianyun.worktime.module.timework.vm.ShareDataDO
 import cn.jianyun.worktime.util.MyDataTool
 import cn.jianyun.worktime.util.MyDateTool
 import cn.jianyun.worktime.util.ifv
@@ -15,12 +14,29 @@ object ShareUtil {
 
     fun toShareSalary(salary: TimeworkSalary): ShareSalaryDO {
         var target = ShareSalaryDO()
-        target.ref = salary.refSalary
         target.type = salary.type
+
+
+        //普通薪水
+        if(salary.type == "normal"){
+            target.valueStr = salary.value
+            target.value =  MyDataTool.toDouble(salary.value, 0.0)
+        }
+        else{
+            if(salary.overType == "times"){
+                //基数
+                target.ref = salary.refSalary
+                target.overValueStr = salary.amount
+                target.overValue = MyDataTool.toDouble(salary.amount, 0.0)
+            }
+            else{
+                //固定工时费
+                target.valueStr = salary.overValue
+                target.value = MyDataTool.toDouble(salary.overValue, 0.0)
+            }
+        }
+
         target.calcType = ifv(salary.overType == "times", "times", "fixed")
-        target.overValue = MyDataTool.toDouble(salary.amount)
-        target.valueStr = salary.value
-        target.value = MyDataTool.toDouble(salary.value)
         target.name = salary.name
         target.mark = salary.remark
         target.ordinal = salary.ordinal.toInt()
@@ -114,7 +130,7 @@ data class ShareSalaryDO(
 ){
 
     fun toSalaryInfo(pro: String): TimeworkSalary {
-        return TimeworkSalary(
+        var uu = TimeworkSalary(
             uuid= pro + uuid,
             projectUuid = pro,
             name = name,
@@ -132,6 +148,21 @@ data class ShareSalaryDO(
             workType = workType,
             gmtCreate = MyDateTool.toDateTimeString(Date())
         )
+
+        if(type == "normal"){
+            uu.value = valueStr
+        }
+        else{
+            if(calcType == "times"){
+                uu.amount = overValueStr
+            }
+            else{
+
+            }
+        }
+
+
+        return uu
     }
 }
 

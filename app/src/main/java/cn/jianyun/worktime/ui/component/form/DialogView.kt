@@ -240,7 +240,8 @@ fun WelcomeDialog(okAction: ()->Unit) {
         mutableStateOf(FormType(type= ""))
     }
 
-    AlertDialog(onDismissRequest = {
+    AlertDialog(
+        onDismissRequest = {
         System.exit(1)
     },
         properties = DialogProperties(
@@ -250,8 +251,8 @@ fun WelcomeDialog(okAction: ()->Unit) {
         modifier = Modifier
             .clip(RoundedCornerShape(20.dp))
             .background(MaterialTheme.colorScheme.background)
-            .fillMaxWidth()
-            .padding(20.dp)) {
+            .fillMaxWidth(0.99f)
+            .padding(10.dp)) {
 
         if(formType.type == Router.PrivatePolicy.route){
 
@@ -289,7 +290,7 @@ fun WelcomeDialog(okAction: ()->Unit) {
             Column() {
                 Column{
                     Text("你好", color=MaterialTheme.colorScheme.primary, fontSize = 22.sp, lineHeight = 35.sp)
-                    Text("很高兴看到你下载极简记工时，App除了使用系统网络权限，不会向用户申请用户地理位置、获取手机号等隐私权限，我们的目标是做好一个记工时工具软件，为了更好的向你提供服务并保证信息安全，使用前请你阅读以下协议:", color = MaterialTheme.colorScheme.primary, lineHeight = 26.sp)
+                    Text("很高兴看到你下载极简记工时，为了保护您的隐私和个人信息，在你使用APP前请认真阅读以下协议:", color = MaterialTheme.colorScheme.primary, lineHeight = 26.sp)
                     Blank(size = 5.dp)
                     Text("用户使用协议", color = ThemeColor,  lineHeight = 26.sp, textDecoration = TextDecoration.Underline, modifier = Modifier.clickable{
                         formType = formType.copy(type = Router.UserPolicy.route)

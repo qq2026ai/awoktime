@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import cn.jianyun.worktime.ui.component.nav.HeaderView
 import cn.jianyun.worktime.util.goBack
+import cn.jianyun.worktime.views.base.PrivacyPolicyWebView
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
@@ -34,7 +35,7 @@ fun PrivatePolicy(navHostController: NavHostController) {
                 .verticalScroll(rememberScrollState())
                 .padding(bottom = 80.dp)
             ) {
-                PrivatePolicyView()
+                PrivacyPolicyWebView()
             }
         }
     })
@@ -116,9 +117,3 @@ App主要是做一个本地记工时打卡工具，不会收集用户手机号�
 
 """.trimIndent()
 
-@Composable
-fun PrivatePolicyView(){
-    Column {
-        Text(PRIVATE_DATA, color = MaterialTheme.colorScheme.primary)
-    }
-}

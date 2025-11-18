@@ -116,7 +116,8 @@ fun VipView(settingViewModel: AppSettingViewModel, activity: Activity, navHostCo
 
                 Blank()
                 LeadingHintView("会员权益")
-                VipItemView(label = "云端备份", icon = IconFont.cloud2, remark = "支持云盘备份，永远不会丢失数据")
+                VipItemView(label = "个人云端备份", icon = IconFont.cloud2, remark = "支持云盘备份，永远不会丢失数据")
+                VipItemView(label = "开发者云备份", icon = IconFont.cloud2, remark = "会员自动备份，永远不会丢失数据")
                 VipItemView(label = "快捷打卡", icon = IconFont.flashlight, remark = "普通用户最多建一个快捷打卡")
                 VipItemView(label = "批量工时打卡", icon = IconFont.add2, remark = "批量设置多天打卡记录")
                 VipItemView(label = "无限项目", icon = IconFont.infinite, remark = "普通用户最多建1个工时项目")

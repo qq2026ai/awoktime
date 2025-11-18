@@ -26,12 +26,17 @@ import cn.jianyun.worktime.api.TraceApi
 import cn.jianyun.worktime.api.TraceInfo
 import cn.jianyun.worktime.main.setting.user.User
 import cn.jianyun.worktime.model.LocalBackupConfig
+import cn.jianyun.worktime.model.share.BackupData
+import cn.jianyun.worktime.model.share.ShareUtil
 import cn.jianyun.worktime.module.base.dao.WebDAVUserDao
 import cn.jianyun.worktime.module.base.model.WebDAVUser
+import cn.jianyun.worktime.module.timework.service.TimeworkService
+import cn.jianyun.worktime.module.timework.vm.ShareDataDO
 import cn.jianyun.worktime.util.CacheUtil
 import cn.jianyun.worktime.util.MyDataTool
 import cn.jianyun.worktime.util.MyDateTool
 import cn.jianyun.worktime.util.MyPhoneTool
+import cn.jianyun.worktime.util.MyRandomTool
 import cn.jianyun.worktime.util.dateStr
 import cn.jianyun.worktime.util.datetimeStr
 import cn.jianyun.worktime.util.getStringValue
@@ -39,10 +44,12 @@ import cn.jianyun.worktime.util.getToastMessageLength
 import cn.jianyun.worktime.util.ifv
 import cn.jianyun.worktime.util.makePKey
 import cn.jianyun.worktime.util.mlog
+import cn.jianyun.worktime.util.parseDateTime
 import cn.jianyun.worktime.util.uuid
 import cn.jianyun.worktime.util.withApi
 import com.alibaba.fastjson2.JSON
 import com.alibaba.fastjson2.toJSONString
+import com.kwad.sdk.core.b.a.it
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -56,6 +63,7 @@ import java.util.Date
 import javax.inject.Inject
 import javax.inject.Named
 import javax.inject.Singleton
+import kotlin.math.log
 
 
 @Singleton
@@ -64,6 +72,7 @@ class BaseRepository @Inject constructor(
     val api: BaseApi,
     val webDAVUserDao: WebDAVUserDao,
     private val traceApi: TraceApi,
+    private val baseApi: BaseApi,
     private val configApi: ConfigApi,
     @ApplicationContext val context: Context
 ) {
@@ -75,6 +84,7 @@ class BaseRepository @Inject constructor(
     var page = ""
     var inited = false
     var registDay = 0
+    var adVip = false
     var focusId by mutableStateOf("")
     var loading by mutableStateOf(false)
     var finishTime by mutableStateOf(0L)
@@ -83,12 +93,10 @@ class BaseRepository @Inject constructor(
     var notifyStatus by mutableStateOf(mapOf<String,Boolean>())
     var uid: String = ""
     var appTipInfo: AppTipInfo = AppTipInfo()
-    var minVipDay = 60
+    var minVipDay = 30
     var curVersion: String = ""
     var showTip: Boolean by mutableStateOf(false)
     var readVersion: String = ""
-
-    var registModel: RegistModel = RegistModel()
 
 
     fun isLogin(): Boolean{
@@ -121,10 +129,9 @@ class BaseRepository @Inject constructor(
                 var ds = withApi {
                     configApi.listConfigs(app="jgs")
                 }
+                mlog("sss", ds)
                 if(ds.success){
                     var ks = ds.fetchResult()
-
-
 //                    var temp = AppTipInfo()
 //                    temp.vip = 0
 //                    temp.minDay = 0
@@ -136,11 +143,10 @@ class BaseRepository @Inject constructor(
 //                    temp.isShow = true
 //                    temp.discount = true
 
-
                     var filterData = ks.filter{one -> one.isShown(that)}
                     if(filterData.isNotEmpty()){
                         that.appTipInfo = filterData[0]
-                        that.minVipDay = ifv(that.appTipInfo.minVipDay < 30, 30, that.appTipInfo.minVipDay)
+                        that.minVipDay = ifv(that.appTipInfo.minVipDay < 10, 10, that.appTipInfo.minVipDay)
                         if(!that.booleanCache(that.appTipInfo.uid())) {
                             that.appTipInfo.isShow = true
                             that.showTip = true
@@ -150,16 +156,23 @@ class BaseRepository @Inject constructor(
                         that.appTipInfo.isShow = false
                         that.showTip = false
                     }
-//
-
-
+                    var configData = ks.filter{one -> one.name == "app_config"}
+                    if(!configData.isEmpty()){
+                        that.appTipInfo.openScreenAds = configData[0].openScreenAds
+                        that.appTipInfo.screenAdsGapMinute = configData[0].screenAdsGapMinute
+                        that.appTipInfo.minVipDay = configData[0].minVipDay
+                    }
                 }
             }
         }
     }
 
     fun isVip(): Boolean{
-        val min = ifv(minVipDay < 30, 30, minVipDay)
+        return isAdVip() || adVip
+    }
+
+    fun isAdVip(): Boolean{
+        val min = ifv(minVipDay < 10, 10, minVipDay)
         return loginUser.vipDate != "" && loginUser.vipDate >= Date().dateStr() || registDay < min
     }
 
@@ -225,6 +238,7 @@ class BaseRepository @Inject constructor(
         brand = CacheUtil.get(context, "brand")
         getUid()
         getDid()
+        registDay = getRegistDay()
         getNotifyStatus()
         inited = true
     }
@@ -587,9 +601,49 @@ class BaseRepository @Inject constructor(
     suspend fun tryUpgrade(): Boolean{
         //判断网络问题
         //判断上次缓存时间
+
+        //判断用户登录问题
+
         val cacheHour = getCacheHour("lvt")
         if(cacheHour < 72){
             return false
+        }
+        try{
+            if(loginUser.username != null && loginUser.username != ""){
+                loginUser.deviceId = MyPhoneTool.getDid()
+                val t1 = withApi {
+                    baseApi.tryLogin(loginUser)
+                }
+                if(t1.success && t1.result == "error"){
+                    toast("账号登录设备过多，试试退出其它端再登录试试")
+                    val uu = loginUser
+                    uu.nickname = ""
+                    uu.username = ""
+                    uu.vipDate = ""
+                    uu.vipName = ""
+                    uu.password = ""
+                    uu.confirmPassword = ""
+                    makeLogin(uu)
+                }
+                if(t1.success && t1.result == "ok"){
+                    var dd =  withApi {
+                        api.fetchUserInfo(loginUser)
+                    }
+                    if(dd.success){
+                        val userInfo = dd.fetchResult() as User
+                        if(userInfo.vipName != null && userInfo.vipName != ""){
+                            loginUser.vipName = userInfo.vipName
+                            loginUser.vipDate = userInfo.vipDate
+                            makeLogin(loginUser)
+                            reload()
+                        }
+                    }
+
+                }
+            }
+        }
+        catch(e: Exception){
+
         }
         val currentVersion = context.packageManager.getPackageInfo(context.packageName, 0).versionName
         val latestVersion = getLatestVersion()
@@ -606,6 +660,8 @@ class BaseRepository @Inject constructor(
             return false
         }
     }
+
+
 
 
 }

@@ -41,6 +41,10 @@ interface TimeworkDataDao {
     @Query("SELECT * FROM TimeworkData WHERE projectUuid = :projectUuid")
     suspend fun listByProject(projectUuid: String): List<TimeworkData>
 
+    @Query("SELECT count(1) FROM TimeworkData WHERE projectUuid = :projectUuid")
+    suspend fun sizeByProject(projectUuid: String): Int
+
+
     @Query("DELETE FROM TimeworkData WHERE projectUuid = :projectUuid")
     suspend fun deleteByProject(projectUuid: String)
 

@@ -28,6 +28,8 @@ class TimeworkProjectViewModel @Inject constructor(
     var editItem by mutableStateOf(TimeworkProject())
     var datalist by mutableStateOf(listOf<TimeworkProject>())
 
+    var sizeMap by mutableStateOf(mutableMapOf<String, Int>())
+
     init {
         reload()
     }
@@ -41,6 +43,12 @@ class TimeworkProjectViewModel @Inject constructor(
             oldSid = baseRepository.sid
             currentProjectId = timeworkService.getProjectId()
             datalist = timeworkService.listProject()
+
+            datalist.forEach {
+                val size = timeworkService.dataDao.sizeByProject(it.uuid)
+                sizeMap.put(it.uuid, size)
+            }
+
         }
     }
 

@@ -85,7 +85,7 @@ fun TimeworkHomeView(navHostController: NavHostController) {
             .verticalScroll(rememberScrollState())
             .padding(bottom = 80.dp)) {
 
-            if(viewModel.baseRepository.registDay < 3){
+            if(viewModel.baseRepository.registDay < 1){
                 GroupView(modifier = Modifier.clickable {
                     viewModel.baseRepository.openUrl("https://v.douyin.com/iP3RxkbP/")
                 }) {
@@ -118,13 +118,13 @@ fun TimeworkHomeView(navHostController: NavHostController) {
                 }
             }
 
-            if(viewModel.baseRepository.readVersion < viewModel.baseRepository.curVersion){
-                GroupView(modifier=Modifier.clickable {
-                    viewModel.formType = FormType(viewModel.baseRepository.curVersion)
-                }) {
-                    Text("新版本功能说明", fontSize = 12.sp, color = ThemeColor)
-                }
-            }
+//            if(viewModel.baseRepository.readVersion < viewModel.baseRepository.curVersion){
+//                GroupView(modifier=Modifier.clickable {
+//                    viewModel.formType = FormType(viewModel.baseRepository.curVersion)
+//                }) {
+//                    Text("新版本功能说明", fontSize = 12.sp, color = ThemeColor)
+//                }
+//            }
 
             TimeworkHeaderStatView(viewModel)
 

@@ -94,40 +94,8 @@ class TimeworkShareViewModel @Inject constructor(
 
             baseRepository.loading(true)
 
-            val pro = timeworkService.getProjectId()
-            val salarys = timeworkService.listSalaryByProject(pro)
-            val awardConfigs = timeworkService.listAwardByProject(pro)
-            val awardDatas = timeworkService.listAwardDataByProject(pro)
-            val workDatas = timeworkService.listDataByProject(pro)
-
-            val awardUuids = awardConfigs.filter{it.type == "award"}.map{it.uuid}
-
-            val backupData = BackupData()
-            backupData.salarys = salarys.map{ ShareUtil.toShareSalary(it).copy(amount = it.fetchRealHourSalary(salarys).toDouble()) }
-            backupData.awardConfigs = awardConfigs.map { ShareUtil.toShareAwardConfig(it) }
-            backupData.awards = awardDatas.map { ShareUtil.toShareAwardData(it).copy(type = ifv(awardUuids.contains(it.awardUuid), "award", "fine")) }
-            backupData.workTimes = workDatas.map { ShareUtil.toWorkData(it) }
-            backupData.appConfig = ShareUtil.toAppConfig(timeworkService.getAppConfig())
-
-
-
-            var shareData = ShareDataDO()
-
-            shareId = MyRandomTool.random(6)
-
-            shareData.uuid = MyRandomTool.uuids()
-            shareData.shareId = shareId
-            shareData.content = JSON.toJSONString(backupData)
-            shareData.userUuid = baseRepository.getUid()
-            shareData.gmtCreate = MyDateTool.toDateTimeString(Date())
-            shareData.name = "安卓记工时"
-            shareData.appId = "jgs"
-            shareData.appCode = "ajgs"
-            shareData.remark =   "${backupData.workTimes.size}条工时记录"
-            val shareRst = withApi {
-                traceApi.share(shareData)
-            }
-            if(shareRst.success){
+            shareId = timeworkService.share(false)
+            if(shareId != ""){
                 shared = true
                 baseRepository.toast("分享成功")
             }

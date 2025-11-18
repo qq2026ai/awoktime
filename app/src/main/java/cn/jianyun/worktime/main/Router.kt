@@ -12,7 +12,7 @@ import androidx.navigation.Navigator
 sealed class Router(open val route: String) {
     object Home : Router("Home")
     object TestMainView : Router("TestMainView")
-    object PrivatePolicy : Router("PrivatePolicy")
+    object PrivatePolicy : Router("PrivatePolicy2")
     object UserPolicy : Router("UserPolicy")
     object TodoList: Router("TodoList")
     object Password: Router("Password")

@@ -19,7 +19,7 @@ data class AppTipInfo(
     var closed: Int = 0,
     var maxDay: Int = 0,
     var minDay: Int = 0,
-    var minVipDay: Int = 60,
+    var minVipDay: Int = 30,
     var newPage: String = "",
     var minIOS: Int = 0,
     var maxIOS: Int = 0,
@@ -34,6 +34,8 @@ data class AppTipInfo(
     var helpFlag: String = "",
     var helpNumber: String = "",
     var isShow: Boolean = false,
+    var openScreenAds: Boolean = true,
+    var screenAdsGapMinute: Int = 2,
     var showWx: Boolean = false,
     var showShare: Boolean = false,
     var shareEvent: Boolean = false

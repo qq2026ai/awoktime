@@ -6,6 +6,7 @@ import com.alibaba.fastjson2.JSON
 import com.alibaba.fastjson2.toJSONString
 
 data class TimeworkBackupData(
+    var projectList:List<TimeworkProject> = listOf(),
     var datalist: List<TimeworkData> = listOf(),
     var salaryList: List<TimeworkSalary> = listOf(),
     var awardList: List<TimeworkAward> = listOf(),

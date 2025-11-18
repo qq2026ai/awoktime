@@ -30,6 +30,7 @@ import cn.jianyun.worktime.ui.component.nav.PageWithFooterView
 import cn.jianyun.worktime.ui.component.nav.TagView
 import cn.jianyun.worktime.ui.component.nav.VerticalRow
 import cn.jianyun.worktime.ui.theme.DeleteColor
+import cn.jianyun.worktime.ui.theme.LightSecondColor
 import cn.jianyun.worktime.ui.theme.ThemeColor
 import cn.jianyun.worktime.util.toVipPage
 
@@ -84,11 +85,16 @@ fun TimeworkProjectManageView(navHostController: NavHostController) {
                     }
                 }) {
                     Column(modifier=Modifier.padding(15.dp)) {
-                        VerticalRow {
-                            Text(it.name)
-                            Blank()
-                            if(it.uuid == viewModel.currentProjectId){
-                                TagView(tag = "当前项目")
+                        Column {
+                            VerticalRow {
+                                Text(it.name)
+                                Blank()
+                                if(it.uuid == viewModel.currentProjectId){
+                                    TagView(tag = "当前项目")
+                                }
+                            }
+                            if(viewModel.sizeMap[it.uuid] != null) {
+                                Text( "${viewModel.sizeMap[it.uuid]}条工时记录", color = ThemeColor, fontSize = 12.sp)
                             }
                         }
                     }

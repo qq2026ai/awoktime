@@ -1,10 +1,12 @@
 package cn.jianyun.worktime.module.timework.views.home
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import cn.jianyun.worktime.module.timework.route.TimeworkRouter
 import cn.jianyun.worktime.module.timework.vm.TimeworkMasterViewModel
@@ -16,6 +18,7 @@ import cn.jianyun.worktime.ui.component.nav.SmallLinkText
 import cn.jianyun.worktime.ui.component.nav.TagView
 import cn.jianyun.worktime.ui.component.nav.TwoColumnView
 import cn.jianyun.worktime.ui.component.nav.VerticalRow
+import cn.jianyun.worktime.ui.theme.ThemeColor
 
 
 @Composable
@@ -38,11 +41,16 @@ fun TimeworkProjectChooseView(nav: NavHostController, viewModel: TimeworkMasterV
                 }
             }) {
                 TwoColumnView(padding=15.dp) {
-                    VerticalRow {
-                        Text(it.name)
-                        Blank()
-                        if(it.uuid == viewModel.currentProjectId){
-                            TagView(tag = "当前")
+                    Column {
+                        VerticalRow {
+                            Text(it.name)
+                            Blank()
+                            if(it.uuid == viewModel.currentProjectId){
+                                TagView(tag = "当前项目")
+                            }
+                        }
+                        if(viewModel.sizeMap[it.uuid] != null) {
+                            Text( "${viewModel.sizeMap[it.uuid]}条工时记录", color = ThemeColor, fontSize = 12.sp)
                         }
                     }
                 }

@@ -21,6 +21,10 @@ interface TimeworkProjectDao {
     @Update(onConflict = OnConflictStrategy.REPLACE)
     suspend fun update(item: TimeworkProject)
 
+
     @Delete
     suspend fun delete(item: TimeworkProject)
+
+    @Query("DELETE FROM TimeworkProject")
+    suspend fun clearAll()
 }

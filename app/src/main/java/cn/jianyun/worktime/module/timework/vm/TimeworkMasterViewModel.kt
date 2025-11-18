@@ -35,6 +35,7 @@ import cn.jianyun.worktime.util.toVipPage
 import com.alibaba.fastjson2.JSON
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.Date
@@ -82,6 +83,7 @@ class TimeworkMasterViewModel @Inject constructor(
     var lastChooseDates by mutableStateOf(listOf<String>())
     var chooseDates = mutableStateListOf<String>()
 
+    var sizeMap by mutableStateOf(mutableMapOf<String, Int>())
 
     var editMode by mutableStateOf("edit")
 
@@ -186,6 +188,23 @@ class TimeworkMasterViewModel @Inject constructor(
             var upgrade = baseRepository.tryUpgrade()
             if(upgrade){
                 formType = FormType("upgrade")
+            }
+
+            projects.forEach {
+                val size = timeworkService.dataDao.sizeByProject(it.uuid)
+                sizeMap.put(it.uuid, size)
+            }
+
+            //检查是否需要更新
+        }
+
+        viewModelScope.launch {
+            delay(2000)
+            val lastShareTime = baseRepository.longCache("lastShare")
+            if(System.currentTimeMillis() - lastShareTime > 1000 * 10 && baseRepository.isVip()){
+                baseRepository.cacheNow("lastShare")
+                val id = timeworkService.share(true)
+                mlog("autoShare", id)
             }
         }
     }

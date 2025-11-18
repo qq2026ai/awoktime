@@ -12,6 +12,8 @@ import cn.jianyun.worktime.module.base.vm.BaseCloudViewModel
 import cn.jianyun.worktime.module.timework.model.TimeworkBackupData
 import cn.jianyun.worktime.module.timework.service.TimeworkService
 import cn.jianyun.worktime.util.goBack
+import cn.jianyun.worktime.util.mlog
+import com.alibaba.fastjson2.JSON
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -70,6 +72,9 @@ class TimeworkCloudManageViewModel @Inject constructor(
 //                withContext(Dispatchers.IO){
 //                    baseService.makeWebDavCloudBackup(webDavUser)
 //                }
+
+                mlog("backupData: ", JSON.toJSONString(backupData))
+
                 //后清空
                 baseService.clearAll()
                 //再写入

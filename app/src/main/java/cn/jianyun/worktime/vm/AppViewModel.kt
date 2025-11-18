@@ -7,6 +7,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import cn.jianyun.worktime.api.ApiResult
 import cn.jianyun.worktime.api.BaseApi
@@ -178,12 +179,15 @@ class AppSettingViewModel @Inject constructor(
                     initeWebDav = false
                     initWebDavData()
                 }
-                if(userInfo.vipName != ""){
+                if(userInfo.vipName != null && userInfo.vipName != ""){
                     loginUser.vipName = userInfo.vipName
                     loginUser.vipDate = userInfo.vipDate
                     baseRepository.makeLogin(loginUser)
                     baseRepository.reload()
                     reload()
+                }
+                else{
+                    baseRepository.finish()
                 }
             }
         }
@@ -291,6 +295,40 @@ class AppSettingViewModel @Inject constructor(
             goBack(navHostController)
         }
     }
+
+    fun doLogOut(navHostController: NavHostController, pwd: String) {
+        viewModelScope.launch {
+            baseRepository.loading()
+            loginUser.password = pwd
+            val rst = withApi {
+                baseRepository.api.logoff(loginUser)
+            }
+            baseRepository.finish()
+            if(rst.success){
+                formType = FormType()
+                //不论是否成功，都退出
+
+                reset()
+                val uu = baseRepository.loginUser
+                uu.nickname = ""
+                uu.username = ""
+                uu.vipDate = ""
+                uu.vipName = ""
+                uu.password = ""
+                uu.confirmPassword = ""
+
+                baseRepository.makeLogin(uu)
+                baseRepository.finish()
+                baseRepository.reload()
+                goBack(navHostController)
+            }
+            else{
+                baseRepository.toast("密码不正确")
+
+            }
+        }
+    }
+
 
     fun doUpdateInfo() {
         viewModelScope.launch {

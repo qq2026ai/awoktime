@@ -2,6 +2,7 @@ package cn.jianyun.worktime.module.timework.views.setting
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.os.Build
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,6 +19,7 @@ import androidx.core.os.bundleOf
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
+import cn.jianyun.worktime.BuildConfig
 import cn.jianyun.worktime.main.Router
 import cn.jianyun.worktime.main.navigateTo
 import cn.jianyun.worktime.main.setting.user.LoginDialog
@@ -96,7 +98,7 @@ fun TimeworkSettingView(navHostController: NavHostController, activity: Activity
                             Text(appViewModel.baseRepository.loginUser.showName(), fontSize = 14.sp, lineHeight = 13.sp)
                             Blank(2.dp)
                             Row {
-                                TagView(tag = ifv(appViewModel.isVip(), appViewModel.loginUser.vipName, "普通用户"), color= ifv(viewModel.baseRepository.isVip(), VipColor, androidx.compose.ui.graphics.Color.Gray), hollow = true)
+                                TagView(tag = ifv(appViewModel.isVip(), appViewModel.loginUser.vipName, "普通用户"), color= ifv(appViewModel.isVip(), VipColor, androidx.compose.ui.graphics.Color.Gray), hollow = true)
                                 if(appViewModel.isVip()){
                                     Blank(2.dp)
                                     TagView(tag = "有效期:" + appViewModel.loginUser.vipDate, color= VipColor, hollow = true)
@@ -253,8 +255,6 @@ fun TimeworkSettingView(navHostController: NavHostController, activity: Activity
                 LinkItemView(label = "导入小程序工时") {
                     navHostController.navigate(Router.ImportData.route)
                 }
-
-
             }
 
             LeadingHintView("关于我们")
@@ -277,15 +277,25 @@ fun TimeworkSettingView(navHostController: NavHostController, activity: Activity
                         viewModel.baseRepository.copyData("1037038247", true)
                     }
                 }
-                LinkItemView(label = "当前版本更新内容") {
-                    viewModel.formType = FormType("upgradeInfo")
-                }
+//                LinkItemView(label = "当前版本更新内容") {
+//                    viewModel.formType = FormType("upgradeInfo")
+//                }
 
 //                LinkItemView(label = "清空所有数据") {
 //                    viewModel.clearAll()
 //                }
             }
 
+//            if(BuildConfig.IS_DEV) {
+//                Text("${viewModel.baseRepository.appTipInfo}")
+//                Text("${viewModel.baseRepository.registDay}天", modifier=Modifier.clickable {
+//                   viewModel.baseRepository.registDay += 1
+//
+//                   viewModel.viewModelScope.launch {
+//                       viewModel.baseRepository.cacheLong("registDay", System.currentTimeMillis() - 1000L * 32 * 24 * 3600L)
+//                   }
+//               })
+//            }
 
         }
 
