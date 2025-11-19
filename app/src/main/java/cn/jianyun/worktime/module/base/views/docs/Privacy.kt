@@ -11,14 +11,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import cn.jianyun.worktime.ui.component.nav.HeaderView
 import cn.jianyun.worktime.util.goBack
-import cn.jianyun.worktime.views.base.PrivacyPolicyWebView
+import cn.jianyun.worktime.views.base.PrivatePolicyView
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
@@ -35,7 +34,7 @@ fun PrivatePolicy(navHostController: NavHostController) {
                 .verticalScroll(rememberScrollState())
                 .padding(bottom = 80.dp)
             ) {
-                PrivacyPolicyWebView()
+                PrivatePolicyView()
             }
         }
     })

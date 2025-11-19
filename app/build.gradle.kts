@@ -9,14 +9,14 @@ plugins {
 
 android {
     namespace = "cn.jianyun.worktime"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "cn.jianyun.worktime"
         minSdk = 26
-        targetSdk = 34
-        versionCode = 26
-        versionName = "2.0.3"
+        targetSdk = 35
+        versionCode = 29
+        versionName = "2.1.0"
         multiDexEnabled = true
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -128,9 +128,6 @@ dependencies {
 
     implementation("com.darkrockstudios:mpfilepicker:3.1.0")
 
-    implementation("com.alipay.sdk:alipaysdk-android:+@aar")
-
-
 
     implementation("androidx.room:room-ktx:2.5.2")
     // To use Kotlin annotation processing tool (kapt)
@@ -141,15 +138,6 @@ dependencies {
     implementation("com.github.loper7:DateTimePicker:0.6.3")
     implementation("com.patrykandpatrick.vico:compose-m3:2.0.0-alpha.20")
 
-
-
-    implementation("cn.admobiletop.adsuyi.ad:core:4.0.3.07171")
-    implementation(files("libs/oaid_sdk_1.0.25.aar"))
-    implementation("cn.admobiletop.adsuyi.ad:oaid:1.0.25.12122")
-    implementation("cn.admobiletop.adsuyi.ad.adapter:tianmu:3.0.3.5.09035")
-//    implementation("cn.admobiletop.adsuyi.ad.adapter:gdt:4.660.1530.10111")
-    implementation("cn.admobiletop.adsuyi.ad.adapter:toutiao:7.1.3.2.09241")
-    implementation("cn.admobiletop.adsuyi.ad.adapter:ksadbase:3.3.76.5.05141")
 
 
 

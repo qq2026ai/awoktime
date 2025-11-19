@@ -26,17 +26,11 @@ import cn.jianyun.worktime.api.TraceApi
 import cn.jianyun.worktime.api.TraceInfo
 import cn.jianyun.worktime.main.setting.user.User
 import cn.jianyun.worktime.model.LocalBackupConfig
-import cn.jianyun.worktime.model.share.BackupData
-import cn.jianyun.worktime.model.share.ShareUtil
 import cn.jianyun.worktime.module.base.dao.WebDAVUserDao
 import cn.jianyun.worktime.module.base.model.WebDAVUser
-import cn.jianyun.worktime.module.timework.service.TimeworkService
-import cn.jianyun.worktime.module.timework.vm.ShareDataDO
 import cn.jianyun.worktime.util.CacheUtil
 import cn.jianyun.worktime.util.MyDataTool
-import cn.jianyun.worktime.util.MyDateTool
 import cn.jianyun.worktime.util.MyPhoneTool
-import cn.jianyun.worktime.util.MyRandomTool
 import cn.jianyun.worktime.util.dateStr
 import cn.jianyun.worktime.util.datetimeStr
 import cn.jianyun.worktime.util.getStringValue
@@ -44,18 +38,14 @@ import cn.jianyun.worktime.util.getToastMessageLength
 import cn.jianyun.worktime.util.ifv
 import cn.jianyun.worktime.util.makePKey
 import cn.jianyun.worktime.util.mlog
-import cn.jianyun.worktime.util.parseDateTime
 import cn.jianyun.worktime.util.uuid
 import cn.jianyun.worktime.util.withApi
 import com.alibaba.fastjson2.JSON
-import com.alibaba.fastjson2.toJSONString
-import com.kwad.sdk.core.b.a.it
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -63,7 +53,6 @@ import java.util.Date
 import javax.inject.Inject
 import javax.inject.Named
 import javax.inject.Singleton
-import kotlin.math.log
 
 
 @Singleton
@@ -127,7 +116,7 @@ class BaseRepository @Inject constructor(
                 postPage("home")
                 //拉一个数据
                 var ds = withApi {
-                    configApi.listConfigs(app="jgs")
+                    configApi.listConfigs(app="gpjgs")
                 }
                 mlog("sss", ds)
                 if(ds.success){
@@ -156,12 +145,12 @@ class BaseRepository @Inject constructor(
                         that.appTipInfo.isShow = false
                         that.showTip = false
                     }
-                    var configData = ks.filter{one -> one.name == "app_config"}
-                    if(!configData.isEmpty()){
-                        that.appTipInfo.openScreenAds = configData[0].openScreenAds
-                        that.appTipInfo.screenAdsGapMinute = configData[0].screenAdsGapMinute
-                        that.appTipInfo.minVipDay = configData[0].minVipDay
-                    }
+//                    var configData = ks.filter{one -> one.name == "app_config"}
+//                    if(!configData.isEmpty()){
+//                        that.appTipInfo.openScreenAds = configData[0].openScreenAds
+//                        that.appTipInfo.screenAdsGapMinute = configData[0].screenAdsGapMinute
+//                        that.appTipInfo.minVipDay = configData[0].minVipDay
+//                    }
                 }
             }
         }
@@ -293,7 +282,11 @@ class BaseRepository @Inject constructor(
     }
 
     fun getCurrentVersion(): String{
-        return context.packageManager.getPackageInfo(context.packageName, 0).versionName
+        val k = context.packageManager.getPackageInfo(context.packageName, 0).versionName
+        if(k != null){
+            return k!!
+        }
+        return "1.0.0"
     }
 
     suspend fun fetchHoliday(year: Int): Map<String, FestivalData>{
@@ -573,7 +566,7 @@ class BaseRepository @Inject constructor(
         newTraceInfo.addField("platform", "vivo")
 //        newTraceInfo.addField("platform", "sumsung")
 //        newTraceInfo.addField("platform", "honor")
-        newTraceInfo.addField("appVersion", context.packageManager.getPackageInfo(context.packageName, 0).versionName) //打包前设置
+        newTraceInfo.addField("appVersion", getCurrentVersion()) //打包前设置
         newTraceInfo.addField("registerDay", "" + loginUser.getRegistDay()) //打包前设置
         newTraceInfo.addField("vip", "0")
         newTraceInfo.addField("sysVersion", "" + Build.VERSION.RELEASE)
@@ -583,7 +576,7 @@ class BaseRepository @Inject constructor(
 
     suspend fun getLatestVersion(): String{
         var version = withApi {
-            traceApi.getAppVersion("ajjgs")
+            traceApi.getAppVersion("gpjgs")
         }
         if(version.success){
             return version.result ?: "1.0.0"
@@ -645,7 +638,7 @@ class BaseRepository @Inject constructor(
         catch(e: Exception){
 
         }
-        val currentVersion = context.packageManager.getPackageInfo(context.packageName, 0).versionName
+        val currentVersion = getCurrentVersion()
         val latestVersion = getLatestVersion()
         val max1 = currentVersion.substring(0, currentVersion.indexOf("."))
         val max2 = latestVersion.subSequence(0, latestVersion.indexOf("."))

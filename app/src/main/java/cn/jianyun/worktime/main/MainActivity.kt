@@ -24,13 +24,6 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import cn.admobiletop.adsuyi.ADSuyiSdk
-import cn.admobiletop.adsuyi.ad.ADSuyiSplashAd
-import cn.admobiletop.adsuyi.ad.data.ADSuyiSplashAdInfo
-import cn.admobiletop.adsuyi.ad.error.ADSuyiError
-import cn.admobiletop.adsuyi.ad.listener.ADSuyiSplashAdListener
-import cn.admobiletop.adsuyi.config.ADSuyiInitConfig
-import cn.admobiletop.adsuyi.listener.ADSuyiInitListener
 import cn.jianyun.worktime.R
 import cn.jianyun.worktime.hilt.respo.BaseRepository
 import cn.jianyun.worktime.main.question.QuestionView
@@ -93,7 +86,6 @@ class MainActivity : ComponentActivity() {
         const val RELOAD_WIDGET = 1000 //MSG_WHAT
     }
 
-    lateinit var adSuyiSplashAd: ADSuyiSplashAd
 
     override fun onDestroy() {
         //退出页面时，置空所以的Message
@@ -129,7 +121,7 @@ class MainActivity : ComponentActivity() {
                 baseRepository.initApp()
                 if(!baseRepository.isAdVip()){
                     lastAdTime = System.currentTimeMillis()
-                    initAd()
+                    //initAd()
                 }
             } catch (e: Exception) {
                 // 处理异常
@@ -143,12 +135,7 @@ class MainActivity : ComponentActivity() {
 
         if(!baseRepository.isAdVip()){
             if(System.currentTimeMillis() - lastAdTime > 1000 * baseRepository.appTipInfo.screenAdsGapMinute * 60){
-                if(adSuyiSplashAd != null){
-                    adSuyiSplashAd.loadOnly("94d184376f61cccaf2")
-                }
-                else{
-                    initAd()
-                }
+
             }
         }
 
@@ -159,90 +146,7 @@ class MainActivity : ComponentActivity() {
         mlog("activity onResume")
     }
 
-    private fun initAd() {
-        // 初始化ADSuyi广告SDK
-        ADSuyiSdk.getInstance().init(
-            this,
-            ADSuyiInitConfig.Builder()
-                // 设置APPID
-                .appId("3424220")
-                // 是否开启Debug，开启会有详细的日志信息打印，如果用上ADSuyiToastUtil工具还会弹出toast提示。
-                // TODO 注意上线后请置为false
-                .debug(false)
-                //【慎改】是否同意隐私政策，将禁用一切设备信息读起严重影响收益
-                .agreePrivacyStrategy(true)
-                // 是否可获取定位数据
-                .isCanUseLocation(true)
-                // 是否可获取设备信息
-                .isCanUsePhoneState(true)
-                // 是否可读取设备安装列表
-                .isCanReadInstallList(true)
-                // 是否可读取设备外部读写权限
-                .isCanUseReadWriteExternal(true)
-                // 是否可读取WIFI信息
-                .isCanUseWifiState(true)
-                // 是否允许使用传感器
-                .isCanUseSensor(true)
-                .build(),
-            object : ADSuyiInitListener {
-                override fun onSuccess() {
-                    // 初始化成功
-                }
 
-                override fun onFailed(error: String) {
-                    // 初始化失败
-                }
-            }
-        )
-
-        // 创建开屏广告实例，第一个参数可以是Activity或Fragment
-        adSuyiSplashAd = ADSuyiSplashAd(this)
-        adSuyiSplashAd.listener = object: ADSuyiSplashAdListener<ADSuyiSplashAdInfo> {
-            override fun onAdExpose(p0: ADSuyiSplashAdInfo?) {
-                mlog("onAdExpose")
-            }
-
-            override fun onAdClick(p0: ADSuyiSplashAdInfo?) {
-                mlog("onAdClick")
-                baseRepository.adVip = true
-            }
-
-            override fun onAdClose(p0: ADSuyiSplashAdInfo?) {
-                val pr = findViewById<FrameLayout>(R.id.ads)
-                pr.visibility = View.GONE
-                baseRepository.adVip = true
-            }
-
-            override fun onAdFailed(p0: ADSuyiError?) {
-                if (p0 != null) {
-                    mlog("ad failed", p0.error)
-                }
-                else{
-                    mlog("add failed")
-                }
-            }
-
-            override fun onADTick(p0: Long) {
-                mlog("ad tick")
-            }
-
-            override fun onReward(p0: ADSuyiSplashAdInfo?) {
-                mlog("ad reward")
-            }
-
-            override fun onAdSkip(p0: ADSuyiSplashAdInfo?) {
-                mlog("ad skip")
-            }
-
-            override fun onAdReceive(p0: ADSuyiSplashAdInfo?) {
-                val pr = findViewById<FrameLayout>(R.id.ads)
-                pr.visibility = View.VISIBLE
-                adSuyiSplashAd.showSplash(findViewById(R.id.ads));
-                baseRepository.adVip = true
-            }
-        }
-        adSuyiSplashAd.loadOnly("94d184376f61cccaf2")
-    }
 
 
 }

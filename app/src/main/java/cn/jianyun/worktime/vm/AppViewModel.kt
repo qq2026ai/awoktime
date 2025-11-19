@@ -1,15 +1,12 @@
 package cn.jianyun.worktime.vm
 
-import android.app.Activity
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import cn.jianyun.worktime.api.ApiResult
 import cn.jianyun.worktime.api.BaseApi
 import cn.jianyun.worktime.hilt.respo.BaseRepository
 import cn.jianyun.worktime.main.setting.user.User
@@ -24,7 +21,6 @@ import cn.jianyun.worktime.module.timework.dao.TimeworkDataDao
 import cn.jianyun.worktime.util.CacheUtil
 import cn.jianyun.worktime.util.parseDateTime
 import com.alibaba.fastjson2.JSON
-import com.alipay.sdk.app.PayTask
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -373,60 +369,6 @@ class AppSettingViewModel @Inject constructor(
 
     fun refreshInfo() {
 
-    }
-
-    fun doPurchase(activity: Activity, cb: () -> Unit) {
-
-        if(!loginUser.isLogin()){
-            purchaseFlag = true
-            formType = FormType("login")
-            return
-        }
-
-        viewModelScope.launch {
-            baseRepository.loading()
-            val info: ApiResult<String> = withApi {
-                baseApi.sdkRequest("workTime","android", loginUser.uuid, currentMode, false)
-            }
-            if(info.success){
-                val alipay = PayTask(activity)
-                val orderResult = info.fetchResult()
-                val result = withContext(Dispatchers.IO) {
-                    alipay.payV2(orderResult, true)
-                }
-
-                if(result.get("resultStatus") != null && result.get("resultStatus") == "6001") {
-
-                }
-                else{
-                    val aliResult = result.get("result")
-                    if(aliResult != ""){
-                        val realResult = JSON.parseObject(aliResult, AliPayResult::class.java)
-                        if(realResult.isSuccess()) {
-                            loginUser.makeVip(currentMode)
-                            baseRepository.makeLogin(loginUser)
-                            toast("购买成功，感谢您的支持")
-                            cb()
-                        }
-                    }
-                    else{
-
-                    }
-                }
-                mlog("payResult", result)
-
-
-//                val checkResult = withApi {
-//                    delay(1000)
-//                    shareApi.checkVip("plan", "android", loginUser.uuid, currentMode)
-//                }
-//                mlog("checkResult", checkResult)
-            }
-            else{
-                toast(info.message)
-            }
-            baseRepository.finish()
-        }
     }
 }
 

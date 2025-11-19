@@ -1,28 +1,18 @@
 package cn.jianyun.worktime.main.setting.user
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import cn.jianyun.worktime.R
 import cn.jianyun.worktime.model.FormType
 import cn.jianyun.worktime.ui.component.nav.AppLogoView
 import cn.jianyun.worktime.util.Blank
-import cn.jianyun.worktime.util.LinkText
 import cn.jianyun.worktime.util.SelectUtil
 import cn.jianyun.worktime.util.WarnText
-import cn.jianyun.worktime.util.radius
 import cn.jianyun.worktime.vm.AppSettingViewModel
-import cn.jianyun.worktime.ui.component.form.GroupView
 import cn.jianyun.worktime.ui.component.form.InnerInputItemView
-import cn.jianyun.worktime.ui.component.form.LongCancelButton
 import cn.jianyun.worktime.ui.component.form.OkAndCancelButtonGroup
 import cn.jianyun.worktime.ui.component.form.SegmentPickerView
 import cn.jianyun.worktime.ui.component.form.SelfDialog
@@ -77,7 +67,7 @@ fun LoginDialog(viewModel: AppSettingViewModel, type: String = "", backAction: (
         if(viewModel.loginType.isForm("regist")){
             Blank()
 
-            SmallTipText(text = "注意：这是极简记工时专属账号，目前仅用于绑定您的付费状态和反馈意见，若您需要对数据进行云备份，请额外配置您的云备份账号")
+            SmallTipText(text = "注意：这是极简记工时专属账号，若您需要对数据进行云备份，请额外配置您的云备份账号")
 
             Blank()
             Blank()

@@ -2,7 +2,6 @@ package cn.jianyun.worktime.module.timework.views.setting
 
 import android.annotation.SuppressLint
 import android.app.Activity
-import android.os.Build
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,16 +13,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.graphics.ColorUtils
 import androidx.core.os.bundleOf
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
-import cn.jianyun.worktime.BuildConfig
 import cn.jianyun.worktime.main.Router
-import cn.jianyun.worktime.main.navigateTo
 import cn.jianyun.worktime.main.setting.user.LoginDialog
-import cn.jianyun.worktime.main.setting.vip.VipView
 import cn.jianyun.worktime.model.FormType
 import cn.jianyun.worktime.module.timework.route.TimeworkRouter
 import cn.jianyun.worktime.module.timework.vm.TimeworkAppConfigViewModel
@@ -32,7 +27,6 @@ import cn.jianyun.worktime.ui.component.form.BottomDialogView
 import cn.jianyun.worktime.ui.component.form.GroupView
 import cn.jianyun.worktime.ui.component.form.LinkItemView
 import cn.jianyun.worktime.ui.component.form.LoadingDialog
-import cn.jianyun.worktime.ui.component.form.LongCancelButton
 import cn.jianyun.worktime.ui.component.form.SelectItemView
 import cn.jianyun.worktime.ui.component.form.SettingGroupView
 import cn.jianyun.worktime.ui.component.form.SwitchItemView
@@ -113,22 +107,22 @@ fun TimeworkSettingView(navHostController: NavHostController, activity: Activity
                     }
                 }
 
-                if(!appViewModel.baseRepository.isVip() && appViewModel.baseRepository.appTipInfo.discount){
-                    Blank()
-                    GroupView(modifier=Modifier.clickable {
-                        var type = appViewModel.baseRepository.appTipInfo.newPage
-                        if(type == "web" && appViewModel.baseRepository.appTipInfo.url != ""){
-                            appViewModel.baseRepository.openUrl(appViewModel.baseRepository.appTipInfo.url)
-                        }
-                    }) {
-                        Text("温馨提示:${appViewModel.baseRepository.appTipInfo.message}",
-                            modifier=Modifier.padding(end = 10.dp),
-                            fontSize = 12.sp, color = appViewModel.baseRepository.appTipInfo.showColor())
-                    }
-                }
+//                if(!appViewModel.baseRepository.isVip() && appViewModel.baseRepository.appTipInfo.discount){
+//                    Blank()
+//                    GroupView(modifier=Modifier.clickable {
+//                        var type = appViewModel.baseRepository.appTipInfo.newPage
+//                        if(type == "web" && appViewModel.baseRepository.appTipInfo.url != ""){
+//                            appViewModel.baseRepository.openUrl(appViewModel.baseRepository.appTipInfo.url)
+//                        }
+//                    }) {
+//                        Text("温馨提示:${appViewModel.baseRepository.appTipInfo.message}",
+//                            modifier=Modifier.padding(end = 10.dp),
+//                            fontSize = 12.sp, color = appViewModel.baseRepository.appTipInfo.showColor())
+//                    }
+//                }
             }
 
-            if(!appViewModel.baseRepository.isVip() && appViewModel.baseRepository.isLogin()){
+            if(!appViewModel.baseRepository.isVip()){
                 SettingGroupView(modifier=Modifier.clickable {
                     if(!appViewModel.loginUser.isLogin()) {
                         appViewModel.formType = FormType("login")
@@ -140,9 +134,9 @@ fun TimeworkSettingView(navHostController: NavHostController, activity: Activity
                     Text("购买会员，获取更多APP使用特权，您的支持能够让极简记工时更好地发展下去", fontSize= 13.sp, color= ThemeColor, modifier= Modifier.padding(6.dp))
                 }
             }
-            else{
-
-            }
+//            else{
+//
+//            }
 
             SettingGroupView {
                 LinkItemView(label = "工时项目管理") {
@@ -252,9 +246,9 @@ fun TimeworkSettingView(navHostController: NavHostController, activity: Activity
 //                LinkItemView(label = "批量删除数据") {
 //                    navHostController.navigate(Router.Batch.route)
 //                }
-                LinkItemView(label = "导入小程序工时") {
-                    navHostController.navigate(Router.ImportData.route)
-                }
+//                LinkItemView(label = "导入小程序工时") {
+//                    navHostController.navigate(Router.ImportData.route)
+//                }
             }
 
             LeadingHintView("关于我们")
@@ -336,9 +330,9 @@ fun TimeworkSettingView(navHostController: NavHostController, activity: Activity
             LoginDialog(appViewModel)
         }
 
-        if(appViewModel.formType.isForm("vip")){
-            VipView(appViewModel, activity)
-        }
+//        if(appViewModel.formType.isForm("vip")){
+//            VipView(appViewModel, activity)
+//        }
 
         if(viewModel.formType.isForm("upgradeInfo")){
             TipDialog(title = "更新说明", message = "1.支持分享和导入工时\n2.增加坚果云绑定说明\n3.日结金额支持小数点\n4.日结支持选择时长\n5.时长支持选择到每一分钟\n6.支持显示0薪水工时\n7.修复薪水计算不准确问题\n" +

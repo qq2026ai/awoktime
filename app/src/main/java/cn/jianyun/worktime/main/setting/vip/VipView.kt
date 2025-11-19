@@ -43,13 +43,9 @@ import cn.jianyun.worktime.ui.component.nav.IconView
 import cn.jianyun.worktime.ui.component.nav.LeadingHintView
 import cn.jianyun.worktime.ui.component.nav.TagView
 import cn.jianyun.worktime.ui.component.nav.VerticalRow
-import cn.jianyun.worktime.ui.theme.DeleteColor
 import cn.jianyun.worktime.ui.theme.ImportantColor
 import cn.jianyun.worktime.ui.theme.ThemeColor
 import cn.jianyun.worktime.util.goBack
-import cn.jianyun.worktime.util.radius
-import cn.jianyun.worktime.views.base.PrivatePolicyView
-import kotlinx.coroutines.launch
 
 @Composable
 fun VipPage(navHostController: NavHostController, activity: Activity) {
@@ -131,22 +127,14 @@ fun VipView(settingViewModel: AppSettingViewModel, activity: Activity, navHostCo
                 Blank()
 
                 Text("我是独立开发者，您的支持能够让我们坚持开发下去，也会让开发者更加有信心开发更多优质的内容和更多新的APP", fontSize = 12.sp)
-                Text("购买失败，请微信联系客服，yongbw2020", fontSize = 12.sp, color = ThemeColor)
+                Text("请微信联系客服，微信号:yongbw2020", fontSize = 12.sp, color = ThemeColor)
 
                 Blank()
-                LongOkButton("确认购买") {
+                LongOkButton("微信联系：yongbw2020 购买会员") {
                     if(!settingViewModel.baseRepository.isLogin()){
                         settingViewModel.formType = FormType("login")
                         settingViewModel.baseRepository.toast("请先登录")
                         return@LongOkButton
-                    }
-                    settingViewModel.doPurchase(activity) {
-                        if(navHostController != null){
-                            goBack(navHostController)
-                        }
-                        else{
-                            settingViewModel.reset()
-                        }
                     }
                 }
                 Blank()

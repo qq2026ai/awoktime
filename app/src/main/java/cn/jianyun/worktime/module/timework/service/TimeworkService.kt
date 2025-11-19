@@ -32,11 +32,8 @@ import cn.jianyun.worktime.util.MyRandomTool
 import cn.jianyun.worktime.util.ifv
 import cn.jianyun.worktime.util.mlog
 import cn.jianyun.worktime.util.toMultiData
-import cn.jianyun.worktime.util.uuid
 import cn.jianyun.worktime.util.withApi
 import com.alibaba.fastjson2.JSON
-import com.kwad.sdk.core.b.a.id
-import com.kwad.sdk.core.b.a.it
 import java.util.Date
 import javax.inject.Inject
 import javax.inject.Singleton
