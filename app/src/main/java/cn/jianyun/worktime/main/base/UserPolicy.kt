@@ -20,31 +20,6 @@ import cn.jianyun.worktime.ui.component.nav.HeaderView
 import cn.jianyun.worktime.util.goBack
 
 
-@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
-@Composable
-fun UserPolicy(navHostController: NavHostController) {
-
-    Scaffold (content = {
-        Column(modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.surface)) {
-            HeaderView(title= "用户使用协议", backAction = {
-                goBack(navHostController)
-            })
-            Column(modifier = Modifier
-                .padding(10.dp)
-                .verticalScroll(rememberScrollState())
-                .padding(bottom = 80.dp)
-            ) {
-                UserPolicyView()
-            }
-        }
-    })
-
-}
-
-
-
 val USER_POLICY_DATA = """
     欢迎下载并使用极简记工时APP,请您（用户）仔细阅读以下全部内容。如用户已勾选同意极简记工时用户使用协议，即表示用户与杭州简蕴科技有限公司已达成协议，并同意接受本协议各项协议的约束。
 

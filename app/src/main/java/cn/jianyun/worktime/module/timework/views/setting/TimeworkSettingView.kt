@@ -113,35 +113,30 @@ fun TimeworkSettingView(navHostController: NavHostController, activity: Activity
                     }
                 }
 
-                if(!appViewModel.baseRepository.isVip() && appViewModel.baseRepository.appTipInfo.discount){
+                if (!appViewModel.baseRepository.isVip() && appViewModel.baseRepository.appTipInfo.discount) {
                     Blank()
-                    GroupView(modifier=Modifier.clickable {
+                    GroupView(modifier = Modifier.clickable {
                         var type = appViewModel.baseRepository.appTipInfo.newPage
-                        if(type == "web" && appViewModel.baseRepository.appTipInfo.url != ""){
+                        if (type == "web" && appViewModel.baseRepository.appTipInfo.url != "") {
                             appViewModel.baseRepository.openUrl(appViewModel.baseRepository.appTipInfo.url)
                         }
                     }) {
-                        Text("温馨提示:${appViewModel.baseRepository.appTipInfo.message}",
-                            modifier=Modifier.padding(end = 10.dp),
-                            fontSize = 12.sp, color = appViewModel.baseRepository.appTipInfo.showColor())
+                        Text(
+                            "温馨提示:${appViewModel.baseRepository.appTipInfo.message}",
+                            modifier = Modifier.padding(end = 10.dp),
+                            fontSize = 12.sp,
+                            color = appViewModel.baseRepository.appTipInfo.showColor()
+                        )
                     }
                 }
             }
 
-            if(!appViewModel.baseRepository.isVip() && appViewModel.baseRepository.isLogin()){
+            if(!appViewModel.baseRepository.isRealVip()){
                 SettingGroupView(modifier=Modifier.clickable {
-                    if(!appViewModel.loginUser.isLogin()) {
-                        appViewModel.formType = FormType("login")
-                    }
-                    else{
-                        appViewModel.formType = FormType("vip")
-                    }
+                    appViewModel.formType = FormType("vip")
                 }) {
-                    Text("购买会员，获取更多APP使用特权，您的支持能够让极简记工时更好地发展下去", fontSize= 13.sp, color= ThemeColor, modifier= Modifier.padding(6.dp))
+                    Text("购买会员，获取更多APP使用特权，您的支持会让极简记工时更好地发展下去", fontSize= 13.sp, color= ThemeColor, modifier= Modifier.padding(6.dp))
                 }
-            }
-            else{
-
             }
 
             SettingGroupView {
@@ -298,7 +293,6 @@ fun TimeworkSettingView(navHostController: NavHostController, activity: Activity
 //            }
 
         }
-
 
         if(appViewModel.formType.isForm("set") || appViewModel.formType.isForm("check") || appViewModel.formType.isForm("reset")) {
             BottomDialogView(title = "", height = 0.dp, cancelable = false, onDismiss = {

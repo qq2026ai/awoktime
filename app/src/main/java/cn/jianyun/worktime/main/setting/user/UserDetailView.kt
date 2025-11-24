@@ -122,12 +122,12 @@ fun UserDetailView(navHostController: NavHostController) {
             
         }
         Blank()
-        Blank()
 
         if(viewModel.isVip()){
             LongCancelButton("专属会员QQ群号:1037038247") {
                 viewModel.baseRepository.copyData("1037038247", true)
             }
+            Blank()
         }
 
         LongCancelButton(label = "我要注销账号") {

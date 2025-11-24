@@ -11,7 +11,4 @@ interface ConfigApi {
     @GET("/api/notify/gets")
     suspend fun listConfigs(@Query("app") app: String, @Query("platform") platform: String = "android"): ApiResult<List<AppTipInfo>>
 
-
-
-
 }

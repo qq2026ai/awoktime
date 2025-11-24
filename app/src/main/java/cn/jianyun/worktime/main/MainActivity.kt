@@ -143,6 +143,7 @@ class MainActivity : ComponentActivity() {
 
         if(!baseRepository.isAdVip()){
             if(System.currentTimeMillis() - lastAdTime > 1000 * baseRepository.appTipInfo.screenAdsGapMinute * 60){
+                lastAdTime = System.currentTimeMillis()
                 if(adSuyiSplashAd != null){
                     adSuyiSplashAd.loadOnly("94d184376f61cccaf2")
                 }

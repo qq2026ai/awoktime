@@ -24,6 +24,7 @@ data class AppTipInfo(
     var minIOS: Int = 0,
     var maxIOS: Int = 0,
     var discount: Boolean = false,
+    var showPurchase: Boolean = false,
     var testMode: Int = -1,
     var forceRate: Int = 0,
     var rateNumber: Int = 30,

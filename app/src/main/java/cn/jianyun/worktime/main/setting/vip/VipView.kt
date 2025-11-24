@@ -22,7 +22,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
 import cn.jianyun.worktime.main.setting.user.LoginDialog
 import cn.jianyun.worktime.model.FormType
@@ -35,7 +34,6 @@ import cn.jianyun.worktime.vm.AppSettingViewModel
 import cn.jianyun.worktime.ui.component.form.GroupView
 import cn.jianyun.worktime.ui.component.form.LongCancelButton
 import cn.jianyun.worktime.ui.component.form.LongOkButton
-import cn.jianyun.worktime.ui.component.form.SelfDialog
 import cn.jianyun.worktime.ui.component.form.tap
 import cn.jianyun.worktime.ui.component.nav.CenterRow
 import cn.jianyun.worktime.ui.component.nav.IconFont
@@ -43,13 +41,10 @@ import cn.jianyun.worktime.ui.component.nav.IconView
 import cn.jianyun.worktime.ui.component.nav.LeadingHintView
 import cn.jianyun.worktime.ui.component.nav.TagView
 import cn.jianyun.worktime.ui.component.nav.VerticalRow
-import cn.jianyun.worktime.ui.theme.DeleteColor
 import cn.jianyun.worktime.ui.theme.ImportantColor
 import cn.jianyun.worktime.ui.theme.ThemeColor
+import cn.jianyun.worktime.util.LinkText
 import cn.jianyun.worktime.util.goBack
-import cn.jianyun.worktime.util.radius
-import cn.jianyun.worktime.views.base.PrivatePolicyView
-import kotlinx.coroutines.launch
 
 @Composable
 fun VipPage(navHostController: NavHostController, activity: Activity) {
@@ -131,7 +126,7 @@ fun VipView(settingViewModel: AppSettingViewModel, activity: Activity, navHostCo
                 Blank()
 
                 Text("我是独立开发者，您的支持能够让我们坚持开发下去，也会让开发者更加有信心开发更多优质的内容和更多新的APP", fontSize = 12.sp)
-                Text("购买失败，请微信联系客服，yongbw2020", fontSize = 12.sp, color = ThemeColor)
+                Text("购买失败或使用微信支付，请微信联系客服，yongbw2020", fontSize = 12.sp, color = ThemeColor)
 
                 Blank()
                 LongOkButton("确认购买") {
@@ -158,6 +153,11 @@ fun VipView(settingViewModel: AppSettingViewModel, activity: Activity, navHostCo
                         settingViewModel.reset()
                     }
                 }
+
+                LinkText("购买前请查看《会员使用协议》") {
+                    settingViewModel.baseRepository.openUrl("https://api.kotal.cn/hm/ttimeVip.html")
+                }
+
             }
         }
 
