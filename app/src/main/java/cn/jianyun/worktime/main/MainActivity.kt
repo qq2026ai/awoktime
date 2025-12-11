@@ -131,6 +131,9 @@ class MainActivity : ComponentActivity() {
                     lastAdTime = System.currentTimeMillis()
                     initAd()
                 }
+                else{
+                    composeView.visibility = View.VISIBLE
+                }
             } catch (e: Exception) {
                 // 处理异常
             }

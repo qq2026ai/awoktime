@@ -150,18 +150,20 @@ data class ShareSalaryDO(
         )
 
         if(type == "normal"){
-            uu.value = valueStr
+            if(valueStr != ""){
+                uu.value = valueStr
+            }
         }
         else{
             if(calcType == "times"){
-                uu.amount = overValueStr
+                if(overValueStr != ""){
+                    uu.amount = overValueStr
+                }
             }
             else{
 
             }
         }
-
-
         return uu
     }
 }
