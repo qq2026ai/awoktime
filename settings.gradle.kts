@@ -6,7 +6,9 @@ pluginManagement {
         gradlePluginPortal()
         maven { url=uri ("https://www.jitpack.io")}
         maven { url=uri("https://maven.admobile.top/repository/maven-releases/")}
+        maven { url=uri("https://artifact.bytedance.com/repository/pangle")}
     }
+
 
     resolutionStrategy {
         eachPlugin {
@@ -24,6 +26,7 @@ dependencyResolutionManagement {
         mavenCentral()
         maven { url=uri ("https://www.jitpack.io")}
         maven { url=uri("https://maven.admobile.top/repository/maven-releases/")}
+        maven { url=uri("https://artifact.bytedance.com/repository/pangle")}
     }
 }
 

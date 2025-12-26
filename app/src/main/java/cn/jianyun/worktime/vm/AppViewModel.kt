@@ -73,7 +73,7 @@ class AppSettingViewModel @Inject constructor(
 
     var notifyStatus2 = mutableStateMapOf<String,Boolean>()
 
-    var currentMode by mutableStateOf("year")
+    var currentMode by mutableStateOf("forever")
 
     var inited by mutableStateOf(false)
 

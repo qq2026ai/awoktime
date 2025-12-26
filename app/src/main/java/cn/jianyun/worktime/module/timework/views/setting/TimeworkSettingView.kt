@@ -149,6 +149,7 @@ fun TimeworkSettingView(navHostController: NavHostController, activity: Activity
                 LinkItemView(label = "日历显示设置") {
                     navHostController.navigate(TimeworkRouter.TimeworkAppStyle.route)
                 }
+
 //                SelectItemView(label = "设置考勤周期", value = viewModel2.editItem.statDay, onValueChange = {
 //                    viewModel2.editItem.statDay = it
 //                    viewModel2.justSave()
@@ -162,6 +163,9 @@ fun TimeworkSettingView(navHostController: NavHostController, activity: Activity
                     appViewModel.makeChanged()
                 }, options = SelectUtil.THEMES)
 
+                LinkItemView(label = "APP主题色") {
+                    navHostController.navigate(TimeworkRouter.TimeworkAppTheme.route)
+                }
 
                 SwitchItemView(label = "打卡精确到每分钟", value = viewModel.appConfig.needEveryMinute, onValueChange = {
                     viewModel.appConfig = viewModel.appConfig.copy(needEveryMinute = it)

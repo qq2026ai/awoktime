@@ -42,6 +42,8 @@ import cn.jianyun.worktime.ui.theme.DeleteColor
 import cn.jianyun.worktime.ui.theme.ThemeColor
 import cn.jianyun.worktime.ui.theme.VipColor
 import cn.jianyun.worktime.util.toPage
+import com.alibaba.fastjson2.JSON
+import com.alibaba.fastjson2.JSONWriter
 import com.alibaba.fastjson2.toJSONString
 
 @Composable
@@ -92,9 +94,6 @@ fun UserDetailView(navHostController: NavHostController) {
             }
         }
         SettingGroupView {
-            InputItemView(label = "ID", readonly = true, value = viewModel.loginUser.uuid,  onValueChange = {
-
-            })
             InputItemView(label = "昵称", readonly = readonly, value = viewModel.loginUser.nickname,  onValueChange = {
                 viewModel.loginUser = viewModel.loginUser.copy(nickname = it)
             })
@@ -107,9 +106,14 @@ fun UserDetailView(navHostController: NavHostController) {
             InputItemView(label = "城市", readonly = readonly,value = viewModel.loginUser.city,  onValueChange = {
                 viewModel.loginUser = viewModel.loginUser.copy(city = it)
             })
-
             InputItemView(label = "天数", readonly = true,value = "" + viewModel.baseRepository.registDay + "天" ,  onValueChange = {
             })
+
+
+            if(viewModel.loginUser.username == "15068790467"){
+                Text(JSON.toJSONString(viewModel.baseRepository.appTipInfo, JSONWriter.Feature.PrettyFormat), fontSize = 12.sp)
+            }
+
         }
 
         if(viewModel.formType.isForm("edit")){

@@ -88,7 +88,6 @@ fun TimeworkHomeView(navHostController: NavHostController) {
             }
         }
 
-
         Column(modifier= Modifier
             .verticalScroll(rememberScrollState())
             .padding(bottom = 80.dp)) {
@@ -291,16 +290,16 @@ fun TimeworkHomeView(navHostController: NavHostController) {
                 }
             }
 
-            if(viewModel.formType.isForm(viewModel.baseRepository.curVersion)){
-                TipDialog(title = "更新说明", message = "1.支持分享和导入工时\n2.增加坚果云绑定说明\n3.日结金额支持小数点\n4.日结支持选择时长\n5.时长支持选择到每一分钟\n6.支持显示0薪水工时\n7.修复薪水计算不准确问题\n" +
-                        "8.支持选择24小时\n注意：首页右上角增加若干个性化设置") {
-                    viewModel.formType = FormType()
-                    viewModel.baseRepository.readVersion = viewModel.baseRepository.curVersion
-                    viewModel.viewModelScope.launch {
-                        viewModel.baseRepository.cache("readVersion", viewModel.baseRepository.curVersion)
-                    }
-                }
-            }
+//            if(viewModel.formType.isForm(viewModel.baseRepository.curVersion)){
+//                TipDialog(title = "更新说明", message = "1.支持分享和导入工时\n2.增加坚果云绑定说明\n3.日结金额支持小数点\n4.日结支持选择时长\n5.时长支持选择到每一分钟\n6.支持显示0薪水工时\n7.修复薪水计算不准确问题\n" +
+//                        "8.支持选择24小时\n注意：首页右上角增加若干个性化设置") {
+//                    viewModel.formType = FormType()
+//                    viewModel.baseRepository.readVersion = viewModel.baseRepository.curVersion
+//                    viewModel.viewModelScope.launch {
+//                        viewModel.baseRepository.cache("readVersion", viewModel.baseRepository.curVersion)
+//                    }
+//                }
+//            }
         }
     }
 

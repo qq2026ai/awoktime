@@ -226,6 +226,7 @@ fun TimeworkDetailDataView(navHostController: NavHostController, arguments: Bund
                     GroupView(verticalPadding = 5.dp) {
                         LongOkButton(label = "导出") {
                             if(viewModel.baseRepository.isVip()){
+                                viewModel.baseRepository.postEvent2("doExport")
                                 viewModel.doExport()
                             }
                             else{

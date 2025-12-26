@@ -30,7 +30,7 @@ interface TimeworkDefaultConfigDao {
     @Query("DELETE FROM TimeworkDefaultConfig")
     suspend fun clearAll()
 
-    @Query("SELECT * FROM TimeworkDefaultConfig WHERE projectUuid = :projectUuid order by ordinal asc")
+    @Query("SELECT * FROM TimeworkDefaultConfig WHERE projectUuid = :projectUuid and uuid != '' order by ordinal asc")
     suspend fun listByProject(projectUuid: String): List<TimeworkDefaultConfig>
 
     @Query("DELETE FROM TimeworkDefaultConfig WHERE projectUuid = :projectUuid")

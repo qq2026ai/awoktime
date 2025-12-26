@@ -82,10 +82,58 @@ class BaseRepository @Inject constructor(
     var notifyStatus by mutableStateOf(mapOf<String,Boolean>())
     var uid: String = ""
     var appTipInfo: AppTipInfo = AppTipInfo()
-    var minVipDay = 30
+    var minVipDay = 15
     var curVersion: String = ""
     var showTip: Boolean by mutableStateOf(false)
     var readVersion: String = ""
+
+    fun fetchAdsValue(): Int {
+        return weightedRandom(this.appTipInfo.adsValue)
+    }
+
+    fun fetchRecoverAdsValue(): Int {
+        return weightedRandom(this.appTipInfo.recoverAdsValue)
+    }
+
+    fun weightedRandom(ratio: String): Int {
+        var u = ratio
+        if (!ratio.contains(":")) {
+            u = "1:1"
+        }
+
+        println("ads ratio: $ratio")
+
+        // 1. 解析比值字符串
+        val components = u.split(":")
+
+        // 2. 确保有两个部分且都能转换成整数
+        if (components.size != 2) {
+            println("错误：比值格式不正确，应为 '权重1:权重2' 的正整数格式")
+            return 1
+        }
+
+        val weight1 = components[0].toIntOrNull()
+        val weight2 = components[1].toIntOrNull()
+
+        if (weight1 == null || weight2 == null || weight1 <= 0 || weight2 <= 0) {
+            println("错误：比值格式不正确，应为 '权重1:权重2' 的正整数格式")
+            return 1
+        }
+
+        // 3. 计算总权重
+        val totalWeight = weight1 + weight2
+
+        // 4. 生成随机数并决定返回值
+        val randomValue = (1..totalWeight).random()
+
+        // 5. 根据权重返回对应的值
+        return if (randomValue <= weight1) {
+            1
+        } else {
+            2
+        }
+    }
+
 
 
     fun isLogin(): Boolean{
@@ -112,6 +160,8 @@ class BaseRepository @Inject constructor(
         val that = this
 
         GlobalScope.launch {
+            delay(1000)
+            mlog("makeFetchConfig")
             if(uid != ""){
                 postPage("home")
                 //拉一个数据
@@ -140,6 +190,13 @@ class BaseRepository @Inject constructor(
                         that.appTipInfo.openScreenAds = configData[0].openScreenAds
                         that.appTipInfo.screenAdsGapMinute = configData[0].screenAdsGapMinute
                         that.appTipInfo.minVipDay = configData[0].minVipDay
+                        that.appTipInfo.adsValue = configData[0].adsValue
+                        that.appTipInfo.recoverAdsValue = configData[0].recoverAdsValue
+                        that.appTipInfo.openRecover = configData[0].openRecover
+
+                        //缓存这个数据
+                        cacheJsonValue("appTipConfig", that.appTipInfo)
+
                     }
                 }
             }
@@ -219,6 +276,8 @@ class BaseRepository @Inject constructor(
         getDid()
         registDay = getRegistDay()
         getNotifyStatus()
+        appTipInfo = getObjectCache("appTipConfig", AppTipInfo::class.java) ?: AppTipInfo()
+        mlog("readCacheConfig", appTipInfo)
         inited = true
     }
 
@@ -529,6 +588,19 @@ class BaseRepository @Inject constructor(
         }
     }
 
+    fun postEvent2(event: String) {
+        var traceInfo = TraceInfo(type = "event", code=event, uid=uid)
+        traceInfo = enhanceTraceInfo(traceInfo)
+
+        if(appTipInfo.needStat){
+            GlobalScope.launch {
+                var dd = withApi {
+                    traceApi.post(traceInfo)
+                }
+            }
+        }
+    }
+
     suspend fun postPage(page: String){
         var traceInfo = TraceInfo(type = "page", code=page, uid=uid)
         traceInfo = enhanceTraceInfo(traceInfo)
@@ -576,9 +648,15 @@ class BaseRepository @Inject constructor(
 
 
     fun isNetworkAvailable(): Boolean {
-        val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        val network = connectivityManager.activeNetwork
-        return network != null
+        try{
+            val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+            val network = connectivityManager.activeNetwork
+            return network != null
+        }
+        catch(e: Exception){
+            return true
+        }
+
     }
 
     suspend fun tryUpgrade(): Boolean{

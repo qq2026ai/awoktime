@@ -1,14 +1,15 @@
 package cn.jianyun.worktime.module.timework.views.home
 
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.core.os.bundleOf
 import androidx.navigation.NavHostController
-import cn.jianyun.worktime.main.navigateTo
 import cn.jianyun.worktime.model.FormType
 import cn.jianyun.worktime.module.timework.model.TimeworkAward
 import cn.jianyun.worktime.module.timework.route.TimeworkRouter
@@ -19,6 +20,8 @@ import cn.jianyun.worktime.ui.component.form.Cancel2Button
 import cn.jianyun.worktime.ui.component.form.InputItemView
 import cn.jianyun.worktime.ui.component.form.InputNumberView
 import cn.jianyun.worktime.ui.component.form.OkButton
+import cn.jianyun.worktime.ui.component.form.ShowInputDialog
+import cn.jianyun.worktime.ui.component.nav.DeleteLinkText
 import cn.jianyun.worktime.ui.component.nav.DeleteText
 import cn.jianyun.worktime.ui.component.nav.FlowTagView
 import cn.jianyun.worktime.ui.component.nav.LeadingHintView
@@ -33,7 +36,7 @@ fun MakeAwardView(viewModel: TimeworkMasterViewModel, navHostController: NavHost
 
     val editAwardItem = viewModel.editAwardItem
 
-    BottomDialogView(title="${viewModel.getCurrentDateStr()}${editAwardItem.typeName()}打卡", height = 300.dp, onDismiss = {
+    BottomDialogView(title="${viewModel.getCurrentDateStr()}${editAwardItem.typeName()}打卡", height = 400.dp, onDismiss = {
         viewModel.formType = FormType()
     }) {
 
@@ -76,9 +79,38 @@ fun MakeAwardView(viewModel: TimeworkMasterViewModel, navHostController: NavHost
         }
 
         if(!editAwardItem.isAdd()){
-            DeleteText {
-                viewModel.deleteType = FormType("deleteAward")
+
+
+            if(!viewModel.editAwardItem.isAdd()){
+
+                Row(modifier=Modifier.padding(30.dp).fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                    DeleteLinkText("删除记录") {
+                        viewModel.deleteType = FormType(type="deleteAward")
+                    }
+                    Blank(30.dp)
+                    SmallLinkText("保存到快捷打卡") {
+                        viewModel.renameInfo = viewModel.editAwardItem.fetchAliasName()
+                        viewModel.renameMode = true
+                    }
+                }
             }
+
+            if(viewModel.renameMode) {
+                ShowInputDialog(value = viewModel.renameInfo,  tip = "请在上方输入快捷打卡名称，下次可以直接在首页点击“此快捷打卡名称”进行快速打卡操作", multiLine = false, onValueChange = {
+                    if(it != ""){
+                        viewModel.saveDefaultConfig(it)
+                        true
+                    }
+                    else{
+                        viewModel.renameMode = false
+                        true
+                    }
+                }, onDismiss = {
+                    viewModel.renameMode = false
+                })
+
+            }
+
         }
     }
 

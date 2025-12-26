@@ -30,7 +30,6 @@ import cn.jianyun.worktime.ui.component.nav.PageWithFooterView
 import cn.jianyun.worktime.ui.component.nav.TagView
 import cn.jianyun.worktime.ui.component.nav.VerticalRow
 import cn.jianyun.worktime.ui.theme.DeleteColor
-import cn.jianyun.worktime.ui.theme.LightSecondColor
 import cn.jianyun.worktime.ui.theme.ThemeColor
 import cn.jianyun.worktime.util.toVipPage
 
@@ -57,6 +56,9 @@ fun TimeworkProjectManageView(navHostController: NavHostController) {
             else{
                 LongOkButton("添加项目") {
                     if(viewModel.baseRepository.isVip()){
+                        if(!viewModel.baseRepository.isRealVip()){
+                            viewModel.baseRepository.postEvent2("vipAddProject")
+                        }
                         viewModel.editItem = TimeworkProject()
                         viewModel.formType = FormType.add()
                     }

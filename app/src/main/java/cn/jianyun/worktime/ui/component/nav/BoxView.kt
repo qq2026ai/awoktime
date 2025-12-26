@@ -230,15 +230,22 @@ fun DeleteLinkText(text:String, padding: Dp =2.dp, color:Color= DeleteColor, onC
 
 @Composable
 fun SmallTipText(text:String, color:Color= Color.Gray,hpadding:Dp =0.dp, padding:Dp = 0.dp,modifier:Modifier=Modifier, onClick: (() -> Unit)? = null) {
-    Text(text, color=color, fontSize = 12.sp, lineHeight = 12.sp, modifier= Modifier
-        .then(modifier)
-        .tap {
-            if (onClick != null) {
+    if(onClick != null){
+        Text(text, color=color, fontSize = 12.sp, lineHeight = 12.sp, modifier= Modifier
+            .then(modifier)
+            .tap{
                 onClick()
             }
-        }
-        .padding(padding)
-        .padding(horizontal = hpadding))
+            .padding(padding)
+            .padding(horizontal = hpadding))
+    }
+    else{
+        Text(text, color=color, fontSize = 12.sp, lineHeight = 12.sp, modifier= Modifier
+            .then(modifier)
+            .padding(padding)
+            .padding(horizontal = hpadding))
+    }
+
 }
 
 @Composable

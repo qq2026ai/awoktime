@@ -90,6 +90,9 @@ fun TimeworkSalaryView(navHostController: NavHostController) {
                     toVipPage(navHostController)
                 }
                 else{
+                    if(viewModel.datalist.count() >= 5 && !viewModel.baseRepository.isRealVip()){
+                        viewModel.baseRepository.postEvent2("vipAddSalary")
+                    }
                     toPage(navHostController,TimeworkRouter.TimeworkSalaryEdit.route, bundleOf("model" to TimeworkSalary().toJSONString()))
                 }
             }

@@ -27,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontVariation.weight
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -156,54 +157,60 @@ fun TimeworkCalendarBodyView(viewModel: TimeworkMasterViewModel,  content: @Comp
             monthInfos.forEach{
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween){
                     it.forEach{
-                        Column(modifier = Modifier
-                            .tap {
-                                if (it.day != "") {
-                                    VibrateUtil.vibrate(viewModel.baseRepository.context)
-                                    viewModel.makeCurrentDate(it.date)
+                        Box(contentAlignment = Alignment.TopStart, modifier = Modifier.weight(1f)) {
+                            Column(modifier = Modifier
+                                .tap {
+                                    if (it.day != "") {
+                                        VibrateUtil.vibrate(viewModel.baseRepository.context)
+                                        viewModel.makeCurrentDate(it.date)
+                                    }
                                 }
-                            }
-                            .border(
-                                width = 1.dp,
-                                color = ifv(
+                                .border(
+                                    width = 1.dp,
+                                    color = ifv(
+                                        viewModel.isFocus(it.date),
+                                        ThemeColor,
+                                        MaterialTheme.colorScheme.surface
+                                    ),
+                                    shape = RoundedCornerShape(6.dp)
+                                )
+                                .padding(horizontal = 2.dp)
+
+                                .background(ifv(
                                     viewModel.isFocus(it.date),
-                                    ThemeColor,
+                                    ThemeColor.copy(0.2f),
                                     MaterialTheme.colorScheme.surface
-                                ),
-                                shape = RoundedCornerShape(6.dp)
-                            )
-                            .padding(horizontal = 2.dp)
-                            .weight(1f)
-                            .background(ifv(
-                                viewModel.isFocus(it.date),
-                                ThemeColor.copy(0.2f),
-                                MaterialTheme.colorScheme.surface
-                            ),)
-                            .height(viewModel.appConfig.allSize())
-                            .padding(vertical = 3.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Row(modifier = Modifier
-                                .width(40.dp)
-                                .height(30.dp),
-                                horizontalArrangement = Arrangement.Center,
-                                verticalAlignment = Alignment.CenterVertically){
-                                Text(text = it.day,
-                                    color= it.fetchDayColor(),
-                                    modifier = Modifier
-                                        .width(26.dp)
-                                        .height(30.dp).wrapContentHeight(),
-                                    lineHeight = 12.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    textAlign = TextAlign.Center)
+                                ),)
+                                .height(viewModel.appConfig.allSize())
+                                .padding(vertical = 3.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Row(modifier = Modifier
+                                    .width(40.dp)
+                                    .height(30.dp),
+                                    horizontalArrangement = Arrangement.Center,
+                                    verticalAlignment = Alignment.CenterVertically){
+                                    Text(text = it.day,
+                                        color= it.fetchDayColor(),
+                                        modifier = Modifier
+                                            .width(26.dp)
+                                            .height(30.dp).wrapContentHeight(),
+                                        lineHeight = 12.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        textAlign = TextAlign.Center)
 
-                                if(viewModel.appConfig.showLunar || viewModel.appConfig.showFestival && it.holiday) {
-                                    VerticalView(text= it.lunarDay, color=it.fetchLunarColor(), fontSize=8.sp)
+                                    if(viewModel.appConfig.showLunar || viewModel.appConfig.showFestival && it.holiday) {
+                                        VerticalView(text= it.lunarDay, color=it.fetchLunarColor(), fontSize=8.sp)
+                                    }
+
                                 }
-
+                                if(it.day != ""){
+                                    content(it.date)
+                                }
                             }
+
                             if(it.day != ""){
-                                content(it.date)
+                                IconView(icon= IconFont.money, color = ThemeColor, iconSize = 13.sp)
                             }
                         }
                     }
@@ -224,8 +231,6 @@ fun TimeworkCalendarBodyView(viewModel: TimeworkMasterViewModel,  content: @Comp
             }
 
         }
-
-        Text(MyDateTool.getBigMonth(viewModel.currentDate), fontSize = 80.sp, color=Color.Gray.copy(0.1f))
     }
 
 

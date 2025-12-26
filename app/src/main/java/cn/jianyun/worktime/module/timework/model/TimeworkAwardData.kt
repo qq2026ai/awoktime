@@ -64,4 +64,8 @@ data class TimeworkAwardData(
     fun realAwardValue(): String {
         return ifv(awardType == "award", awardValue, "-" + awardValue)
     }
+
+    fun fetchAliasName(): String {
+        return typeName() + this.awardValue + "元"
+    }
 }

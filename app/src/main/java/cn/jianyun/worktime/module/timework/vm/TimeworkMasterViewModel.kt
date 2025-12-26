@@ -24,6 +24,7 @@ import cn.jianyun.worktime.module.timework.model.TimeworkSalary
 import cn.jianyun.worktime.module.timework.service.TimeworkService
 import cn.jianyun.worktime.util.MyDataTool
 import cn.jianyun.worktime.util.MyDateTool
+import cn.jianyun.worktime.util.MyRandomTool
 import cn.jianyun.worktime.util.uuid
 import cn.jianyun.worktime.util.SelectDO
 import cn.jianyun.worktime.util.color
@@ -77,6 +78,9 @@ class TimeworkMasterViewModel @Inject constructor(
     var appConfig by mutableStateOf(TimeworkAppConfigDTO())
 
     var holidayMap by mutableStateOf(mapOf<String, FestivalData>())
+
+    var renameInfo by mutableStateOf("")
+    var renameMode by mutableStateOf(false)
 
     var multiMode by mutableStateOf(false)
     var clearMode by mutableStateOf(true)
@@ -683,7 +687,6 @@ class TimeworkMasterViewModel @Inject constructor(
             baseRepository.reload()
             baseRepository.finish()
         }
-
     }
 
     fun changeProject(it: TimeworkProject) {
@@ -694,5 +697,32 @@ class TimeworkMasterViewModel @Inject constructor(
             currentProjectName = it.name
             reloadData(true)
         }
+    }
+
+    override fun resetForm(){
+        super.resetForm()
+        renameInfo = ""
+        renameMode = false
+    }
+
+    fun saveDefaultConfig(name: String) {
+
+        viewModelScope.launch {
+            var defaultItem = TimeworkDefaultConfig()
+            defaultItem.uuid = uuid()
+            defaultItem.name = name
+            defaultItem.aliasName = name
+            defaultItem.type = "sign"
+            defaultItem.shown = true
+            defaultItem.ordinal = -System.currentTimeMillis()
+            defaultItem.projectUuid = timeworkService.getProjectId()
+            defaultItem.config = JSON.toJSONString(editWorkItem)
+            timeworkService.defaultConfigDao.insert(defaultItem)
+            reloadData(true)
+            defaultConfigs = timeworkService.defaultConfigDao.listByProject(timeworkService.getProjectId())
+            resetForm()
+            baseRepository.toast("快捷打卡添加成功")
+        }
+
     }
 }

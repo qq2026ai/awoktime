@@ -108,12 +108,7 @@ fun TimeworkDefaultConfigView(navHostController: NavHostController) {
                     }
                     LongCancelButton("添加") {
                         //判断vip
-                        if(viewModel.baseRepository.isVip() || viewModel.datalist.count() < 2){
-                            toPage(navHostController, TimeworkRouter.TimeworkDefaultEdit.route, bundleOf("model" to TimeworkDefaultConfig().toJSONString()))
-                        }
-                        else{
-                            toVipPage(navHostController)
-                        }
+                        toPage(navHostController, TimeworkRouter.TimeworkDefaultEdit.route, bundleOf("model" to TimeworkDefaultConfig().toJSONString()))
                     }
 
                     if(viewModel.datalist.size > 1){

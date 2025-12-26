@@ -2,6 +2,7 @@ package cn.jianyun.worktime.module.timework.views.biz
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -16,12 +17,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cn.jianyun.worktime.module.timework.dto.TimeworkShownData
+import cn.jianyun.worktime.ui.component.nav.IconFont
+import cn.jianyun.worktime.ui.component.nav.IconView
 import cn.jianyun.worktime.util.radius
 
 
 @Composable
 fun TimeworkCellView(data: TimeworkShownData){
-
 
     //判断数据情况
     if(!data.isEmpty()) {

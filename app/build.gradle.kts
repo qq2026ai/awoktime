@@ -15,8 +15,8 @@ android {
         applicationId = "cn.jianyun.worktime"
         minSdk = 26
         targetSdk = 34
-        versionCode = 29
-        versionName = "2.1.2"
+        versionCode = 36
+        versionName = "2.2.1"
         multiDexEnabled = true
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -147,11 +147,8 @@ dependencies {
     implementation(files("libs/oaid_sdk_1.0.25.aar"))
     implementation("cn.admobiletop.adsuyi.ad:oaid:1.0.25.12122")
     implementation("cn.admobiletop.adsuyi.ad.adapter:tianmu:3.0.3.5.09035")
-//    implementation("cn.admobiletop.adsuyi.ad.adapter:gdt:4.660.1530.10111")
-    implementation("cn.admobiletop.adsuyi.ad.adapter:toutiao:7.1.3.2.09241")
-    implementation("cn.admobiletop.adsuyi.ad.adapter:ksadbase:3.3.76.5.05141")
-
-
+    implementation(files("libs/open_ad_sdk.aar"))
+    implementation(files("libs/GDTSDK.unionNormal.4.660.1530.aar"))
 
 
 }

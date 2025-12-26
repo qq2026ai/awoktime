@@ -8,6 +8,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import cn.jianyun.worktime.hilt.respo.BaseRepository
 import cn.jianyun.worktime.model.FormType
@@ -15,8 +16,10 @@ import cn.jianyun.worktime.module.base.vm.BaseViewModel
 import cn.jianyun.worktime.module.timework.dao.TimeworkDataDao
 import cn.jianyun.worktime.module.timework.dao.TimeworkDefaultConfigDao
 import cn.jianyun.worktime.module.timework.dao.TimeworkSalaryDao
+import cn.jianyun.worktime.module.timework.model.TimeworkData
 import cn.jianyun.worktime.module.timework.model.TimeworkSalary
 import cn.jianyun.worktime.module.timework.service.TimeworkService
+import cn.jianyun.worktime.util.MyDataTool
 import cn.jianyun.worktime.util.MyDateTool
 import cn.jianyun.worktime.util.uuid
 import cn.jianyun.worktime.util.SelectDO
@@ -38,6 +41,10 @@ class TimeworkSalaryViewModel @Inject constructor(
     var editItem by mutableStateOf(TimeworkSalary())
     var datalist by mutableStateOf(listOf<TimeworkSalary>())
     var showAll by mutableStateOf(false)
+    var workList by mutableStateOf(listOf<SalaryInfo>())
+
+
+    var allowEdit by mutableStateOf(false)
 
     init {
         reload()
@@ -57,7 +64,6 @@ class TimeworkSalaryViewModel @Inject constructor(
             datalist.forEach {
                 it.showValue = it.makeShowValue(datalist)
             }
-
         }
     }
 
@@ -75,6 +81,34 @@ class TimeworkSalaryViewModel @Inject constructor(
         }
         inited = true
         editItem = model
+
+
+        if(!model.isAdd()){
+            viewModelScope.launch {
+                val list = timeworkService.listDataBySalary(timeworkService.getProjectId(), model.uuid)
+                var rst = mutableListOf<SalaryInfo>()
+                var salary = model.fetchRealHourSalary(datalist).toString()
+                list.forEach {
+                    if(it.mode == "hour") {
+                        if(it.salaryUuid == model.uuid && !it.onlyOver && it.baseSalaryTime != ""){
+                            rst.add(SalaryInfo(day= it.day, type = "normal", it.baseSalaryTime, price = MyDataTool.multipyWithString(salary, MyDataTool.timeToDecimal(it.baseSalaryTime))))
+                        }
+                        if(it.overSalaryUuid == model.uuid && it.overTime && it.overSalaryTime != ""){
+                            rst.add(SalaryInfo(day= it.day, type = "over", it.overSalaryTime, price = MyDataTool.multipyWithString(salary, MyDataTool.timeToDecimal(it.overSalaryTime))))
+                        }
+                    }
+                    if(it.mode == "time") {
+                        if(it.salaryUuid == model.uuid && it.beginTime != "" && it.endTime != ""){
+                            rst.add(SalaryInfo(day= it.day, type = "normal", it.fetchBaseHour(), price = MyDataTool.multipyWithString(salary, MyDataTool.timeToDecimal(it.baseSalaryTime))))
+                        }
+                    }
+                }
+                workList = rst
+            }
+        }
+        else{
+            workList = listOf()
+        }
     }
 
     fun save(navHostController: NavHostController) {
@@ -169,5 +203,15 @@ class TimeworkSalaryViewModel @Inject constructor(
 
     }
 
+
+}
+
+
+data class SalaryInfo(
+    var day: String = "", //打卡日期
+    var type: String = "", //上班类型
+    var period: String = "", //上班时长
+    var price: String = "" //总收入
+) {
 
 }

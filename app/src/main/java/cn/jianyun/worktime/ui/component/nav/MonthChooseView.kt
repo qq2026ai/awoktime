@@ -107,7 +107,7 @@ fun MonthChooseView(value: String = "", beginDay: String = "1", fontSize: TextUn
                         .verticalScroll(rememberScrollState())
                         .weight(1f)
                         ) {
-                        listOf("2022",  "2023", "2024", "2025", "2026", "2027", "2028").forEach {
+                        listOf(  "2025", "2026", "2027","2024", "2023", "2022").forEach {
                             Text(it + "年",color= focusColor(it == chooseYear), modifier = Modifier
                                 .tap {
                                     chooseYear = it

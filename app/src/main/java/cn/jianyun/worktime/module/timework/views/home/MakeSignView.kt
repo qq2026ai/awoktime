@@ -1,7 +1,9 @@
 package cn.jianyun.worktime.module.timework.views.home
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -18,10 +20,13 @@ import cn.jianyun.worktime.ui.component.form.InputNumberView
 import cn.jianyun.worktime.ui.component.form.OkButton
 import cn.jianyun.worktime.ui.component.form.SegmentItemView
 import cn.jianyun.worktime.ui.component.form.SelectItemView
+import cn.jianyun.worktime.ui.component.form.ShowInputDialog
 import cn.jianyun.worktime.ui.component.form.SwitchItemView
 import cn.jianyun.worktime.ui.component.form.TimePeriodPickerItemView3
 import cn.jianyun.worktime.ui.component.form.TimePickerItemView3
+import cn.jianyun.worktime.ui.component.nav.DeleteLinkText
 import cn.jianyun.worktime.ui.component.nav.DeleteText
+import cn.jianyun.worktime.ui.component.nav.SmallLinkText
 import cn.jianyun.worktime.ui.component.nav.SmallTipText
 import cn.jianyun.worktime.ui.theme.DeleteColor
 import cn.jianyun.worktime.util.ifv
@@ -179,9 +184,33 @@ fun MakeSignView(viewModel: TimeworkMasterViewModel, navHostController: NavHostC
         }
 
         if(!viewModel.editWorkItem.isAdd()){
-            DeleteText {
-                viewModel.deleteType = FormType(type="deleteSign")
+
+            Row(modifier=Modifier.padding(30.dp).fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                DeleteLinkText("删除记录") {
+                    viewModel.deleteType = FormType(type="deleteSign")
+                }
+                Blank(30.dp)
+                SmallLinkText("保存到快捷打卡") {
+                    viewModel.renameInfo = viewModel.editWorkItem.fetchAliasName()
+                    viewModel.renameMode = true
+                }
             }
+        }
+
+        if(viewModel.renameMode) {
+            ShowInputDialog(value = viewModel.renameInfo,  tip = "请在上方输入快捷打卡名称，下次可以直接在首页点击“此快捷打卡名称”进行快速打卡操作", multiLine = false, onValueChange = {
+                if(it != ""){
+                    viewModel.saveDefaultConfig(it)
+                    true
+                }
+                else{
+                    viewModel.renameMode = false
+                    true
+                }
+            }, onDismiss = {
+                viewModel.renameMode = false
+            })
+
         }
 
     }

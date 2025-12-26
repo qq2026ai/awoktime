@@ -86,17 +86,12 @@ class TimeworkShareViewModel @Inject constructor(
     }
 
     fun doShare() {
-
-
-        var that = this
-
         viewModelScope.launch {
-
             baseRepository.loading(true)
-
             shareId = timeworkService.share(false)
             if(shareId != ""){
                 shared = true
+                baseRepository.postEvent2("shareData")
                 baseRepository.toast("分享成功")
             }
             else{

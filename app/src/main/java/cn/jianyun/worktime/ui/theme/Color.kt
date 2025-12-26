@@ -4,7 +4,11 @@ package cn.jianyun.worktime.ui.theme
 import androidx.compose.ui.graphics.Color
 
 
-val ThemeColor = Color(0xFF45B787)
+var ThemeColor = Color(0xFF45B787)
+
+
+
+
 val PrimaryColor = Color(0xFF8076A3)
 val DeleteColor = Color(0xFFF05A46)
 val ImportantColor = Color(0xFFEE3F4D)

@@ -31,6 +31,8 @@ class TimeworkAppConfigViewModel @Inject constructor(
     var oldSid by mutableStateOf(0)
     var inited by mutableStateOf(false)
 
+    var nowColor by mutableStateOf("")
+
     init {
         reload()
     }
@@ -46,6 +48,7 @@ class TimeworkAppConfigViewModel @Inject constructor(
         viewModelScope.launch {
             oldSid = baseRepository.sid
             editItem = dao.get()
+            nowColor = baseRepository.getCache("themeColor", "")
             mlog("reload data")
         }
     }

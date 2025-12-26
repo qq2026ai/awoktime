@@ -39,7 +39,10 @@ data class AppTipInfo(
     var screenAdsGapMinute: Int = 2,
     var showWx: Boolean = false,
     var showShare: Boolean = false,
-    var shareEvent: Boolean = false
+    var adsValue: String = "10:1",
+    var recoverAdsValue: String = "10:1",
+    var needStat: Boolean = true,
+    var openRecover: Boolean = true
 ) {
 
     fun showColor(): Color {
@@ -50,6 +53,7 @@ data class AppTipInfo(
         }
         return c
     }
+
 
 
     fun uid(): String {

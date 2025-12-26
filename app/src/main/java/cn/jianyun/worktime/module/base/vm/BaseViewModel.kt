@@ -40,7 +40,7 @@ abstract class BaseViewModel: ViewModel() {
         getRepository().toast(msg)
     }
 
-    fun resetForm() {
+    open fun resetForm() {
         formType = FormType()
     }
 }
