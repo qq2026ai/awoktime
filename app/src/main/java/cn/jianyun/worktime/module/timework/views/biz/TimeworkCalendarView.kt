@@ -60,27 +60,6 @@ import java.util.Date
 @Composable
 fun TimeworkCalendarView(viewModel: TimeworkMasterViewModel){
 
-//    val context = LocalContext.current
-//    val soundPool = remember {
-//        SoundPool.Builder()
-//            .setMaxStreams(1)
-//            .setAudioAttributes(
-//                AudioAttributes.Builder()
-//                    .setUsage(AudioAttributes.USAGE_GAME)
-//                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-//                    .build()
-//            )
-//            .build()
-//    }
-//
-//    val soundId = remember { soundPool.load(context, R.raw.click_6, 1) }
-//
-//    DisposableEffect(Unit) {
-//        onDispose {
-//            soundPool.release()
-//        }
-//    }
-
     return GroupView(horizonPadding = 2.dp) {
         CalendarHeaderView(viewModel.appConfig.isMondayFirst())
         TimeworkCalendarBodyView(viewModel){ date ->
@@ -181,6 +160,7 @@ fun TimeworkCalendarBodyView(viewModel: TimeworkMasterViewModel,  content: @Comp
                                     ThemeColor.copy(0.2f),
                                     MaterialTheme.colorScheme.surface
                                 ),)
+                                .fillMaxWidth()
                                 .height(viewModel.appConfig.allSize())
                                 .padding(vertical = 3.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally
@@ -209,9 +189,9 @@ fun TimeworkCalendarBodyView(viewModel: TimeworkMasterViewModel,  content: @Comp
                                 }
                             }
 
-                            if(it.day != ""){
-                                IconView(icon= IconFont.money, color = ThemeColor, iconSize = 13.sp)
-                            }
+//                            if(it.day != ""){
+//                                IconView(icon= IconFont.money, color = ThemeColor, iconSize = 13.sp)
+//                            }
                         }
                     }
                 }

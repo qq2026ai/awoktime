@@ -665,6 +665,10 @@ class BaseRepository @Inject constructor(
 
         //判断用户登录问题
 
+        if(!isNetworkAvailable() && !loginUser.isVip()){
+            return true
+        }
+
         val cacheHour = getCacheHour("lvt")
         if(cacheHour < 72){
             return false
@@ -710,9 +714,7 @@ class BaseRepository @Inject constructor(
         val latestVersion = getLatestVersion()
         val max1 = currentVersion.substring(0, currentVersion.indexOf("."))
         val max2 = latestVersion.subSequence(0, latestVersion.indexOf("."))
-        if(!isNetworkAvailable()){
-            return true
-        }
+
         if(MyDataTool.toInteger(max2, 0) - 1 > MyDataTool.toInteger(max1, 0)) {
             return true
         }

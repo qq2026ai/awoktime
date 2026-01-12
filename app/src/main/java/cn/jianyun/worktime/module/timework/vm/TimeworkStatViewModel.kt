@@ -113,9 +113,13 @@ class TimeworkStatViewModel @Inject constructor(
 
         var salaryMap = mutableMapOf<String, Float>()
         var salaryInfoMap = mutableMapOf<String, String>()
+        var overSalarySet = mutableSetOf<String>()
         salarys.forEach{
             salaryMap.put(it.uuid, it.fetchRealHourSalary(salarys))
             salaryInfoMap.put(it.uuid, it.name + "(" + it.showValue + ")")
+            if(it.type == "over"){
+                overSalarySet.add(it.uuid)
+            }
         }
 
         var normalDays = mutableSetOf<String>()
@@ -143,13 +147,18 @@ class TimeworkStatViewModel @Inject constructor(
                 }
             }
             if(it.mode == "time" && it.endTime != "") {
-                statData.baseHour = MyDataTool.plusTime(statData.baseHour, it.fetchBaseHour())
                 newItem.baseSalaryInfo = salaryInfoMap.get(it.salaryUuid) ?: ""
                 newItem.baseSalaryPrice = salaryMap.get(it.salaryUuid) ?: 0f
-                statData.baseSalary = MyDataTool.plusPriceWithString(statData.baseSalary, it.fetchBaseMoney(salaryMap.get(it.salaryUuid) ?: 0f))
-
-
-                normalDays.add(it.day)
+                if(overSalarySet.contains(it.salaryUuid)){
+                    overDays.add(it.day)
+                    statData.overHour = MyDataTool.plusTime(statData.overHour, it.fetchBaseHour())
+                    statData.overSalary = MyDataTool.plusPriceWithString(statData.overSalary, it.fetchBaseMoney(salaryMap.get(it.salaryUuid) ?: 0f))
+                }
+                else{
+                    normalDays.add(it.day)
+                    statData.baseHour = MyDataTool.plusTime(statData.baseHour, it.fetchBaseHour())
+                    statData.baseSalary = MyDataTool.plusPriceWithString(statData.baseSalary, it.fetchBaseMoney(salaryMap.get(it.salaryUuid) ?: 0f))
+                }
                 totalDays.add(it.day)
             }
             if(it.mode == "day"){

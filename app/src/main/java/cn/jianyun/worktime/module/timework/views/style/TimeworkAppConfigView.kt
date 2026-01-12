@@ -79,7 +79,14 @@ fun TimeworkConfigView(modifier:Modifier = Modifier, padding: Dp = 0.dp, onDismi
     Column {
         ZeroGroupView(horizonPadding = padding) {
 
-            SegmentItemView(label = "一周开始日", value = viewModel.editItem.beginDay, options = SelectUtil.MONDAY_OR_SUNDAY,  onValueChange = {
+            SwitchItemView(
+                label = "日历左右滑动",
+                value = viewModel.editItem.swipeCalendar,
+                onValueChange = {
+                    viewModel.editItem = viewModel.editItem.copy(swipeCalendar = it)
+                }
+            )
+            SegmentItemView(label = "一周开始日", width = 60.dp, value = viewModel.editItem.beginDay, options = SelectUtil.MONDAY_OR_SUNDAY,  onValueChange = {
                 viewModel.editItem = viewModel.editItem.copy(beginDay = it)
             })
 

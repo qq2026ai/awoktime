@@ -80,6 +80,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import pro.dxys.ad.AdSdk
 import javax.inject.Inject
 
 class SplashViewModel: ViewModel() {
@@ -105,8 +106,10 @@ class MainActivity : ComponentActivity() {
     lateinit var adSuyiSplashAd: ADSuyiSplashAd
     lateinit var dyAd: TTAdNative
 
-    var dy_app_id = ifv(BuildConfig.IS_DEV, "5761363", "5768810")
-    var dy_ad_id = ifv(BuildConfig.IS_DEV, "103754403", "103773769")
+    var initAppTime = 0L
+
+    var dy_app_id = ifv(BuildConfig.IS_DEV, "5768810", "5768810")
+    var dy_ad_id = ifv(BuildConfig.IS_DEV, "103821515", "103821515")
 
     override fun onDestroy() {
         //退出页面时，置空所以的Message
@@ -124,6 +127,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         //启动定时刷新任务
+
+        initAppTime = System.currentTimeMillis()
 
         val splashScreen = installSplashScreen()
         splashScreen.setKeepOnScreenCondition{viewModel.isLoading.value}
@@ -155,11 +160,14 @@ class MainActivity : ComponentActivity() {
 
     fun loadAds(recover: Boolean = false, mustAd: Int = 0){
 
+        mlog("gapAdsTime", System.currentTimeMillis() - initAppTime)
         if(baseRepository.loginUser.username != "15068790467"){
             if(baseRepository.isAdVip() && !BuildConfig.IS_DEV){
                 return
             }
         }
+
+        AdSdk.initAdn(getApplication(),"jjjgs");
 
         if(BuildConfig.IS_DEV){
             baseRepository.appTipInfo.adsValue = "1:1111"
@@ -249,17 +257,17 @@ class MainActivity : ComponentActivity() {
     }
 
     fun buildSplashAdslot(): AdSlot {
-
         val displayMetrics = resources.displayMetrics
         val screenWidthPx = displayMetrics.widthPixels
         val screenHeightPx = displayMetrics.heightPixels
+        val density: Float = displayMetrics.density
         return AdSlot.Builder()
             .setCodeId(dy_ad_id) //广告位ID
             .setIsAutoPlay(true)
             .setImageAcceptedSize(screenWidthPx, screenHeightPx)
+            .setExpressViewAcceptedSize(screenWidthPx / density, screenHeightPx / density)
             .build()
     }
-
 
     // 加载开屏广告
     fun loadSplashAd() {
@@ -267,6 +275,8 @@ class MainActivity : ComponentActivity() {
         dyAd.loadSplashAd(buildSplashAdslot(), object : TTAdNative.CSJSplashAdListener {
             override fun onSplashLoadSuccess(p0: CSJSplashAd?) {
                 mlog("loadDyAdSucess")
+
+                mlog("loadAdsTime", System.currentTimeMillis() - initAppTime)
             }
 
             override fun onSplashLoadFail(error: CSJAdError?) {

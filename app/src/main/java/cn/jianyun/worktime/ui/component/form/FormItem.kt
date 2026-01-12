@@ -781,7 +781,7 @@ fun ShowInputDialog(value: String, tip: String = "", password: Boolean=false,min
                             if(textFieldValueState.text != ""){
                                 Text(text="清空", fontSize = 12.sp, color= MaterialTheme.colorScheme.tertiary, fontWeight = FontWeight.Medium, modifier = Modifier.clickable {
                                     textFieldValueState = TextFieldValue(text = "", selection = TextRange(0,0))
-                                }.padding(10.dp))
+                                })
                             }
                         }
 

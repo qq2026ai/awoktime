@@ -286,7 +286,10 @@ public class LunarCalendar {
      * @return 传回农历 year年闰哪个月1-12, 没闰传回 0
      */
     private static int leapMonth(int year) {
-        return (int) ((LUNAR_INFO[year - MIN_YEAR] & 0xF00000)) >> 20;
+        if(year - MIN_YEAR >= 0 && year - MIN_YEAR < LUNAR_INFO.length){
+            return (int) ((LUNAR_INFO[year - MIN_YEAR] & 0xF00000)) >> 20;
+        }
+        return 0;
     }
 
     final static String chineseNumber[] = {"一", "二", "三", "四", "五", "六", "七", "八", "九", "十", "十一", "十二"};

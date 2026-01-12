@@ -7,6 +7,7 @@ import androidx.room.PrimaryKey
 import cn.jianyun.worktime.module.base.model.BaseRoomModel
 import cn.jianyun.worktime.util.MyDataTool
 import cn.jianyun.worktime.util.SelectDO
+import cn.jianyun.worktime.util.ifv
 
 
 /**
@@ -134,7 +135,7 @@ data class TimeworkSalary(
     }
 
     fun toSelect(): SelectDO {
-        return SelectDO(name + "(" + showValue +")", uuid)
+        return SelectDO(name + (ifv(type == "over", "(加班)", "") + "(" + showValue +")" ), uuid)
     }
 
 }

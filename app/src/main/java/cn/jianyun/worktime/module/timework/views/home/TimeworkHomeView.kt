@@ -2,6 +2,8 @@ package cn.jianyun.worktime.module.timework.views.home
 
 
 
+import CalendarScreen
+import LoadingView
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -29,6 +31,7 @@ import cn.jianyun.worktime.module.timework.model.TimeworkAwardData
 import cn.jianyun.worktime.module.timework.model.TimeworkData
 import cn.jianyun.worktime.module.timework.route.TimeworkRouter
 import cn.jianyun.worktime.module.timework.views.biz.TimeworkCalendarView
+import cn.jianyun.worktime.module.timework.views.biz.TimeworkCellView
 import cn.jianyun.worktime.module.timework.views.style.BottomTimeworkConfigView
 import cn.jianyun.worktime.module.timework.vm.TimeworkMasterViewModel
 import cn.jianyun.worktime.ui.component.nav.MonthChooseView
@@ -125,18 +128,23 @@ fun TimeworkHomeView(navHostController: NavHostController) {
                 }
             }
 
-//            if(viewModel.baseRepository.readVersion < viewModel.baseRepository.curVersion){
-//                GroupView(modifier=Modifier.clickable {
-//                    viewModel.formType = FormType(viewModel.baseRepository.curVersion)
-//                }) {
-//                    Text("新版本功能说明", fontSize = 12.sp, color = ThemeColor)
-//                }
-//            }
-
             TimeworkHeaderStatView(viewModel)
 
             Blank()
-            TimeworkCalendarView(viewModel)
+
+            if(viewModel.appConfig.swipeCalendar){
+                if(viewModel.inited){
+                    CalendarScreen(viewModel) { date ->
+                        TimeworkCellView(viewModel.fetchShownData(date))
+                    }
+                }
+                else{
+                    LoadingView()
+                }
+            }
+            else{
+                TimeworkCalendarView(viewModel)
+            }
 
             TimeworkDataListView(viewModel = viewModel)
             if(viewModel.baseRepository.registDay < 3){

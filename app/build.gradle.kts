@@ -15,8 +15,8 @@ android {
         applicationId = "cn.jianyun.worktime"
         minSdk = 26
         targetSdk = 34
-        versionCode = 36
-        versionName = "2.2.1"
+        versionCode = 50
+        versionName = "3.0.0"
         multiDexEnabled = true
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -141,7 +141,7 @@ dependencies {
     implementation("com.github.loper7:DateTimePicker:0.6.3")
     implementation("com.patrykandpatrick.vico:compose-m3:2.0.0-alpha.20")
 
-
+    implementation("com.google.code.gson:gson:2.8.5")
 
     implementation("cn.admobiletop.adsuyi.ad:core:4.0.3.07171")
     implementation(files("libs/oaid_sdk_1.0.25.aar"))
@@ -149,6 +149,9 @@ dependencies {
     implementation("cn.admobiletop.adsuyi.ad.adapter:tianmu:3.0.3.5.09035")
     implementation(files("libs/open_ad_sdk.aar"))
     implementation(files("libs/GDTSDK.unionNormal.4.660.1530.aar"))
+    implementation(files("libs/adsdk-251208.aar"))
+
+    implementation("com.pangle.cn:mediation-gdt-adapter:4.660.1530.1")
 
 
 }

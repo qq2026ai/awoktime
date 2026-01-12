@@ -232,6 +232,10 @@ public class MyDateTool {
         return getField(date, Calendar.MONTH) + 1;
     }
 
+    public static String getYearMonth(Date date){
+        return getYear(date) + ":" + getMonth(date);
+    }
+
     public static int getDay(Date date){
         return getField(date, Calendar.DATE);
     }
@@ -481,7 +485,12 @@ public class MyDateTool {
                 work = !holidayMap.get(k).getHoliday();
             }
             else{
-                lunarDay = LunarCalendar.getLunarDay(day);
+                try{
+                    lunarDay = LunarCalendar.getLunarDay(day);
+                }
+                catch (Exception e){
+                    lunarDay = "";
+                }
             }
             MonthDateInfo kk = new MonthDateInfo(day, getField(day, Calendar.DATE) + "", lunarDay, isToday,false, holiday, work);
             flat.add(kk);

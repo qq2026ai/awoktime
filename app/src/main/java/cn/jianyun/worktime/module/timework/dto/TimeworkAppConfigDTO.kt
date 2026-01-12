@@ -14,6 +14,7 @@ data class TimeworkAppConfigDTO(
 
     var beginDay: String = "monday", //开始日期
     var showLunar: Boolean = true, //显示农历
+    var swipeCalendar: Boolean = false, //显示农历
     var showFestival: Boolean = true, //显示节假日
     var showHour: Boolean = true, //显示工时
     var showMoney: Boolean = true, //显示金额

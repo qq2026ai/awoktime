@@ -6,7 +6,6 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.NavHostController
 import cn.jianyun.worktime.api.FestivalData
 import cn.jianyun.worktime.hilt.respo.BaseRepository
 import cn.jianyun.worktime.model.FormType
@@ -24,7 +23,6 @@ import cn.jianyun.worktime.module.timework.model.TimeworkSalary
 import cn.jianyun.worktime.module.timework.service.TimeworkService
 import cn.jianyun.worktime.util.MyDataTool
 import cn.jianyun.worktime.util.MyDateTool
-import cn.jianyun.worktime.util.MyRandomTool
 import cn.jianyun.worktime.util.uuid
 import cn.jianyun.worktime.util.SelectDO
 import cn.jianyun.worktime.util.color
@@ -32,7 +30,6 @@ import cn.jianyun.worktime.util.dateStr
 import cn.jianyun.worktime.util.isOk
 import cn.jianyun.worktime.util.mlog
 import cn.jianyun.worktime.util.parseDate
-import cn.jianyun.worktime.util.toVipPage
 import com.alibaba.fastjson2.JSON
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -41,6 +38,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.Date
 import javax.inject.Inject
+import kotlin.collections.mapOf
 
 @HiltViewModel
 class TimeworkMasterViewModel @Inject constructor(
@@ -69,10 +67,12 @@ class TimeworkMasterViewModel @Inject constructor(
     var currentDate by mutableStateOf(Date())
     var focusDate by mutableStateOf(Date())
 
+    var homeData by mutableStateOf(mutableMapOf<String, HomePageData>())
+
+
     var shownDataMap by mutableStateOf(mapOf<String, TimeworkShownData>())
     var workDataMap by mutableStateOf(mapOf<String, List<TimeworkData>>())
     var awardDataMap by mutableStateOf(mapOf<String, List<TimeworkAwardData>>())
-
     var monthStatModel by mutableStateOf(TimeworkStatData())
 
     var appConfig by mutableStateOf(TimeworkAppConfigDTO())
@@ -90,6 +90,7 @@ class TimeworkMasterViewModel @Inject constructor(
     var sizeMap by mutableStateOf(mutableMapOf<String, Int>())
 
     var editMode by mutableStateOf("edit")
+
 
     fun getCurrentDateStr(): String {
         return MyDateTool.toDateString(currentDate)
@@ -189,6 +190,9 @@ class TimeworkMasterViewModel @Inject constructor(
             reloadData(false)
             baseRepository.finish()
 
+            inited = true
+
+
             var upgrade = baseRepository.tryUpgrade()
             if(upgrade){
                 formType = FormType("upgrade")
@@ -223,18 +227,33 @@ class TimeworkMasterViewModel @Inject constructor(
     override fun reloadData(dataChanged: Boolean){
         //列出本月的数据
 
+//        if(!dataChanged){
+//            //取缓存里的数据
+//            val cache = homeData[MyDateTool.getYearMonth(currentDate)]
+//            if(cache != null){
+//                shownDataMap = cache.shownDataMap
+//                workDataMap = cache.workDataMap
+//                awardDataMap = cache.awardDataMap
+//                monthStatModel = cache.monthStatModel
+//                mlog("read cache...", MyDateTool.getYearMonth(currentDate), cache)
+//                return
+//            }
+//        }
+
         val beginDay = MyDateTool.getStartDayStringOfMonth(currentDate)
         val endDay = MyDateTool.getLastDayStringOfMonth(currentDate)
 
         var salaryMap = mutableMapOf<String, Float>()
         var salaryInfoMap = mutableMapOf<String, String>()
+        var overSalarySet = mutableSetOf<String>()
         salarys.forEach{
             salaryMap.put(it.uuid, it.fetchRealHourSalary(salarys))
-            salaryInfoMap.put(it.uuid, it.name + "(" + it.showValue + ")")
+            salaryInfoMap.put(it.uuid, it.toSelect().label)
+            if(it.type == "over") {
+                overSalarySet.add(it.uuid)
+            }
         }
-
         var monthStatResult = TimeworkStatData()
-
         var tempWorkMap = mutableMapOf<String, List<TimeworkData>>()
         var tempAwardMap = mutableMapOf<String, List<TimeworkAwardData>>()
         viewModelScope.launch {
@@ -297,8 +316,14 @@ class TimeworkMasterViewModel @Inject constructor(
                         newItem.baseSalaryPrice = salaryMap.get(it.salaryUuid) ?: 0f
                         item.money = MyDataTool.plusPriceWithString(item.money, it.fetchBaseMoney(salaryMap.get(it.salaryUuid) ?: 0f))
 
-                        monthStatResult.baseHour = MyDataTool.plusTime(monthStatResult.baseHour, it.fetchBaseHour())
-                        monthStatResult.baseSalary = MyDataTool.plusPriceWithString(monthStatResult.baseSalary, it.fetchBaseMoney(salaryMap.get(it.salaryUuid) ?: 0f))
+                        if(overSalarySet.contains(it.salaryUuid)){
+                            monthStatResult.overHour = MyDataTool.plusTime(monthStatResult.overHour, it.fetchBaseHour())
+                            monthStatResult.overSalary = MyDataTool.plusPriceWithString(monthStatResult.overSalary, it.fetchBaseMoney(salaryMap.get(it.salaryUuid) ?: 0f))
+                        }
+                        else{
+                            monthStatResult.baseHour = MyDataTool.plusTime(monthStatResult.baseHour, it.fetchBaseHour())
+                            monthStatResult.baseSalary = MyDataTool.plusPriceWithString(monthStatResult.baseSalary, it.fetchBaseMoney(salaryMap.get(it.salaryUuid) ?: 0f))
+                        }
 
                     }
                     if(it.mode == "day"){
@@ -363,10 +388,18 @@ class TimeworkMasterViewModel @Inject constructor(
             awardDataMap = tempAwardMap
             monthStatModel = monthStatResult
 
+
+            //put cache
+
+//            homeData.put(MyDateTool.getYearMonth(currentDate),  HomePageData(shownDataMap, workDataMap, awardDataMap, monthStatModel))
+
             if(dataChanged){
                 baseRepository.reload()
             }
             baseRepository.finish()
+
+            mlog("make cache...", MyDateTool.getYearMonth(currentDate))
+
         }
     }
 
@@ -726,3 +759,13 @@ class TimeworkMasterViewModel @Inject constructor(
 
     }
 }
+
+
+
+data class HomePageData(
+    var shownDataMap: Map<String, TimeworkShownData> = mapOf(),
+    var workDataMap: Map<String, List<TimeworkData>> = mapOf(),
+    var awardDataMap : Map<String, List<TimeworkAwardData>> = mapOf(),
+    var monthStatModel :TimeworkStatData = TimeworkStatData()
+)
+
