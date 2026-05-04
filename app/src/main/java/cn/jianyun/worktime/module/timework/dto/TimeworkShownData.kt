@@ -4,6 +4,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
 import cn.jianyun.worktime.util.MyDataTool
+import cn.jianyun.worktime.util.MyStringTool
 import cn.jianyun.worktime.util.color
 import cn.jianyun.worktime.util.toIntData
 
@@ -22,6 +23,10 @@ data class TimeworkShownData(
     var dayMoney: String = "",
     var awardValue: String = "",
     var fineValue: String = "",
+    var hasRemark: Boolean = false,
+    var showDateTag: Boolean = false,
+    var settleState: String = "none",
+    var maskMoney: Boolean = false,
     var hourSize: Int = 12,
     var moneySize: Int = 12
 ){
@@ -36,6 +41,22 @@ data class TimeworkShownData(
 
     fun hasFine(): Boolean{
         return fineValue != ""
+    }
+
+    fun hasDateTag(): Boolean{
+        return hasAward() || hasFine() || hasRemark
+    }
+
+    fun showDateTagArea(): Boolean{
+        return showDateTag
+    }
+
+    fun hasSettleMark(): Boolean{
+        return settleState == "full" || settleState == "partial"
+    }
+
+    fun isFullSettled(): Boolean{
+        return settleState == "full"
     }
 
     fun fetchFontSize(): TextUnit {
@@ -91,11 +112,18 @@ data class TimeworkShownData(
         return a + "h"
     }
 
-    fun getTotalMoney(withUnit: Boolean = false): String {
+    fun getTotalMoney(): String {
         return MyDataTool.toFixed(MyDataTool.getPriceWithFloat(money, 2) +
                 MyDataTool.getPriceWithFloat(dayMoney, 2) +
                 MyDataTool.getPriceWithFloat(awardValue, 2) -
                 MyDataTool.getPriceWithFloat(fineValue, 2), 2)
+    }
+
+    fun fetchShownMoney(): String {
+        if(maskMoney){
+            return "**"
+        }
+        return getTotalMoney()
     }
 
     fun fetchRealFirstColor(): Color {

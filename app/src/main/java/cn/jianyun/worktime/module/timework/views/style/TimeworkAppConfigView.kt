@@ -4,38 +4,58 @@ package cn.jianyun.worktime.module.timework.views.style
 
 import android.annotation.SuppressLint
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import cn.jianyun.worktime.module.timework.vm.TimeworkAppConfigViewModel
 import cn.jianyun.worktime.ui.component.form.AdderView
-import cn.jianyun.worktime.util.SelectUtil
 import cn.jianyun.worktime.util.goBack
 import cn.jianyun.worktime.ui.component.form.BottomDialogView
 import cn.jianyun.worktime.ui.component.form.ColorSelectItemView
 import cn.jianyun.worktime.ui.component.form.InputNumberView
 import cn.jianyun.worktime.ui.component.form.LongOkButton
+import cn.jianyun.worktime.ui.component.form.MultiSelectItemView
 import cn.jianyun.worktime.ui.component.form.SegmentItemView
 import cn.jianyun.worktime.ui.component.form.SelectItemView
 import cn.jianyun.worktime.ui.component.form.SwitchItemView
 import cn.jianyun.worktime.ui.component.form.ZeroGroupView
 import cn.jianyun.worktime.ui.component.nav.HeaderView
+import cn.jianyun.worktime.ui.component.nav.SmallLinkText
+import cn.jianyun.worktime.ui.component.nav.VerticalRow
+import cn.jianyun.worktime.ui.theme.ThemeColor
+import cn.jianyun.worktime.util.Blank
+import cn.jianyun.worktime.util.SelectUtil
+import cn.jianyun.worktime.util.ifv
+import cn.jianyun.worktime.util.radius
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun TimeworkAppConfigView(navHostController: NavHostController) {
+    val viewModel = hiltViewModel<TimeworkAppConfigViewModel>()
+    viewModel.tryReload()
+
     Scaffold(content = {
         Box(modifier = Modifier, contentAlignment = Alignment.BottomCenter) {
             Column(
@@ -44,6 +64,7 @@ fun TimeworkAppConfigView(navHostController: NavHostController) {
                     .background(MaterialTheme.colorScheme.background)
             ) {
                 HeaderView(title = "日历显示设置", backAction = {
+                    viewModel.resetChanges()
                     goBack(navHostController)
                 })
 
@@ -52,7 +73,7 @@ fun TimeworkAppConfigView(navHostController: NavHostController) {
                         .padding(10.dp, 10.dp)
                         .verticalScroll(rememberScrollState())
                 ) {
-                    TimeworkConfigView(padding = 10.dp){
+                    TimeworkConfigView(viewModel = viewModel, padding = 10.dp){
                         goBack(navHostController)
                     }
                 }
@@ -63,36 +84,124 @@ fun TimeworkAppConfigView(navHostController: NavHostController) {
 
 @Composable
 fun BottomTimeworkConfigView(onDismiss: () -> Unit){
-    BottomDialogView(title = "日历显示设置", cancelable = true, onDismiss = {
+    val viewModel = hiltViewModel<TimeworkAppConfigViewModel>()
+    viewModel.tryReload()
+    val dialogHeight = (LocalConfiguration.current.screenHeightDp * 0.82f).dp
+    val dismissAction = {
+        viewModel.resetChanges()
         onDismiss()
-    }) {
-        TimeworkConfigView(onDismiss=onDismiss)
+    }
+
+    BottomDialogView(
+        title = "日历显示设置",
+        cancelable = true,
+        height = dialogHeight,
+        rightTool = {
+            VerticalRow {
+                SmallLinkText(text = "取消") {
+                    dismissAction()
+                }
+                Blank(6.dp)
+                SmallLinkText(text = "保存") {
+                    viewModel.save(onDismiss)
+                }
+            }
+        },
+        onDismiss = {
+            dismissAction()
+        }
+    ) {
+        TimeworkConfigView(viewModel = viewModel, showFooterSave = false, onDismiss=onDismiss)
     }
 }
 
 @Composable
-fun TimeworkConfigView(modifier:Modifier = Modifier, padding: Dp = 0.dp, onDismiss: () -> Unit){
+fun BottomHomeStatConfigView(onDismiss: () -> Unit){
     val viewModel = hiltViewModel<TimeworkAppConfigViewModel>()
+    viewModel.tryReload()
+    val dismissAction = {
+        viewModel.resetChanges()
+        onDismiss()
+    }
+
+    BottomDialogView(
+        title = "首页顶部统计",
+        cancelable = true,
+        height = 410.dp,
+        rightTool = {
+            VerticalRow {
+                SmallLinkText(text = "取消") {
+                    dismissAction()
+                }
+                Blank(6.dp)
+                SmallLinkText(text = "保存") {
+                    viewModel.save(onDismiss)
+                }
+            }
+        },
+        onDismiss = {
+            dismissAction()
+        }
+    ) {
+        Text("点击选择首页顶部要显示的指标", fontSize = 12.sp, color = MaterialTheme.colorScheme.tertiary)
+        Blank(4.dp)
+        Text("提示：超过4个指标后，首页顶部可左右滑动查看", fontSize = 12.sp, color = MaterialTheme.colorScheme.tertiary)
+        Blank(14.dp)
+        AdderView(
+            label = "统计区域字号",
+            value = viewModel.editItem.normalizedHomeStatSize(),
+            minValue = 12,
+            maxValue = 30,
+            onValueChange = {
+                viewModel.editItem = viewModel.editItem.copy(homeStatSize = it)
+            }
+        )
+        Blank(10.dp)
+        HomeStatFieldPicker(viewModel = viewModel)
+    }
+}
+
+@Composable
+fun TimeworkConfigView(
+    modifier:Modifier = Modifier,
+    padding: Dp = 0.dp,
+    showFooterSave: Boolean = true,
+    viewModel: TimeworkAppConfigViewModel = hiltViewModel(),
+    onDismiss: () -> Unit
+){
     viewModel.tryReload()
 
 
-    Column {
+    Column(modifier = modifier) {
         ZeroGroupView(horizonPadding = padding) {
-
-            SwitchItemView(
-                label = "日历左右滑动",
-                value = viewModel.editItem.swipeCalendar,
-                onValueChange = {
-                    viewModel.editItem = viewModel.editItem.copy(swipeCalendar = it)
-                }
-            )
             SegmentItemView(label = "一周开始日", width = 60.dp, value = viewModel.editItem.beginDay, options = SelectUtil.MONDAY_OR_SUNDAY,  onValueChange = {
                 viewModel.editItem = viewModel.editItem.copy(beginDay = it)
             })
 
-//            SelectItemView(label = "考勤周期", value = viewModel.editItem.statDay, options = SelectUtil.getFromDays(),  onValueChange = {
-//                viewModel.editItem = viewModel.editItem.copy(statDay = it)
-//            })
+            SelectItemView(label = "考勤周期", value = viewModel.editItem.normalizedStatDay(), options = SelectUtil.getFromDays(),  onValueChange = {
+                viewModel.editItem = viewModel.editItem.copy(statDay = it)
+            })
+
+            MultiSelectItemView(
+                label = "首页顶部统计",
+                columnCount = 2,
+                value = viewModel.editItem.normalizedHomeStatFields(),
+                onValueChange = {
+                    viewModel.editItem = viewModel.editItem.copy(homeStatFields = it)
+                },
+                options = SelectUtil.HOME_STAT_TYPES,
+                maxCount = 0
+            )
+
+            AdderView(
+                label = "顶部统计字号",
+                value = viewModel.editItem.normalizedHomeStatSize(),
+                minValue = 12,
+                maxValue = 30,
+                onValueChange = {
+                    viewModel.editItem = viewModel.editItem.copy(homeStatSize = it)
+                }
+            )
 
             SwitchItemView(
                 label = "显示中国农历",
@@ -123,6 +232,14 @@ fun TimeworkConfigView(modifier:Modifier = Modifier, padding: Dp = 0.dp, onDismi
                 value = viewModel.editItem.showMoney,
                 onValueChange = {
                     viewModel.editItem = viewModel.editItem.copy(showMoney = it)
+                }
+            )
+
+            SwitchItemView(
+                label = "显示日期标记",
+                value = viewModel.editItem.showDateTag,
+                onValueChange = {
+                    viewModel.editItem = viewModel.editItem.copy(showDateTag = it)
                 }
             )
 
@@ -200,18 +317,68 @@ fun TimeworkConfigView(modifier:Modifier = Modifier, padding: Dp = 0.dp, onDismi
 
             SwitchItemView(
                 label = "播放打卡音效",
-                value = viewModel.editItem.showNotice,
+                value = viewModel.editItem.showVoice,
                 onValueChange = {
-                    viewModel.editItem = viewModel.editItem.copy(showNotice = it)
+                    viewModel.editItem = viewModel.editItem.copy(showVoice = it)
                 }
             )
         }
 
-        LongOkButton("保存") {
-            viewModel.save(onDismiss)
-
+        if(showFooterSave){
+            LongOkButton("保存") {
+                viewModel.save(onDismiss)
+            }
         }
     }
 
 
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun HomeStatFieldPicker(viewModel: TimeworkAppConfigViewModel) {
+    FlowRow(modifier = Modifier.fillMaxWidth()) {
+        val selectedFields = viewModel.editItem.normalizedHomeStatFields()
+            .split("^")
+            .filter { it.isNotBlank() }
+
+        SelectUtil.HOME_STAT_TYPES.forEach { option ->
+            val selected = selectedFields.contains(option.value)
+            Text(
+                text = option.label,
+                modifier = Modifier
+                    .padding(end = 10.dp, bottom = 12.dp)
+                    .radius(20.dp)
+                    .clickable {
+                        val nextValues = selectedFields.toMutableList()
+                        if (selected) {
+                            if (nextValues.size == 1) {
+                                viewModel.baseRepository.toast("至少选择1个指标")
+                                return@clickable
+                            }
+                            nextValues.remove(option.value)
+                        } else {
+                            nextValues.add(option.value)
+                        }
+                        val result = SelectUtil.HOME_STAT_TYPES
+                            .filter { nextValues.contains(it.value) }
+                            .joinToString("^") { it.value }
+                        viewModel.editItem = viewModel.editItem.copy(homeStatFields = result)
+                    }
+                    .background(
+                        ifv(
+                            selected,
+                            ThemeColor,
+                            MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    )
+                    .padding(horizontal = 14.dp)
+                    .height(32.dp)
+                    .wrapContentSize(),
+                color = ifv(selected, Color.White, MaterialTheme.colorScheme.primary),
+                fontSize = 13.sp,
+                lineHeight = 13.sp
+            )
+        }
+    }
 }

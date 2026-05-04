@@ -70,7 +70,7 @@ fun TimeworkShareView(navHostController: NavHostController) {
 
                     if(viewModel.curPage == "share"){
                         GroupView {
-                            Text("默认情况下用户的数据仅保留在手机本地及iCloud，如果想把数据同步到其他平台就需要分享工时数据，并获得秘钥，在新的设备可以通过秘钥导入即可")
+                            Text("默认情况下，工时数据仅保存在当前设备本地。如果你想把数据同步到其他设备或平台，可以先分享工时数据获得秘钥，再在新设备里通过秘钥导入。")
                         }
                         if(viewModel.shared){
                             LeadingHintView(label="分享秘钥")

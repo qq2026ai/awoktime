@@ -40,6 +40,7 @@ import cn.jianyun.worktime.module.base.views.webdav.WebDAVUserEditView
 import cn.jianyun.worktime.module.base.views.webdav.WebDAVUserManageView
 import cn.jianyun.worktime.module.base.views.webdav.WebDavDataView
 import cn.jianyun.worktime.module.timework.route.TimeworkRouter
+import cn.jianyun.worktime.module.timework.service.TimeworkService
 import cn.jianyun.worktime.module.timework.views.TimeworkMainView
 import cn.jianyun.worktime.module.timework.views.award.TimeworkAwardEditView
 import cn.jianyun.worktime.module.timework.views.batch.BatchAddView
@@ -51,6 +52,7 @@ import cn.jianyun.worktime.module.timework.views.salary.TimeworkSalaryEditView
 import cn.jianyun.worktime.module.timework.views.share.TimeworkShareView
 import cn.jianyun.worktime.module.timework.views.stat.TimeworkDetailDataView
 import cn.jianyun.worktime.module.timework.views.style.TimeworkAppConfigView
+import cn.jianyun.worktime.module.timework.views.tool.TimeworkBatchSettleView
 import cn.jianyun.worktime.module.timework.views.tool.ImportDataView
 import cn.jianyun.worktime.ui.component.form.WelcomeDialog
 import cn.jianyun.worktime.ui.theme.ThemeColor
@@ -96,6 +98,9 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var baseRepository: BaseRepository
 
+    @Inject
+    lateinit var timeworkService: TimeworkService
+
     lateinit var dyAd: TTAdNative
 
     var initAppTime = 0L
@@ -140,6 +145,7 @@ class MainActivity : ComponentActivity() {
             try {
                 ThemeColor = baseRepository.getCache("themeColor", "#45B787").color()
                 baseRepository.initApp()
+                timeworkService.makeNotifyAsync(force = false)
                 loadAds()
             } catch (e: Exception) {
                 // 处理异常
@@ -152,6 +158,13 @@ class MainActivity : ComponentActivity() {
     }
 
     fun loadAds(){
+        if(!baseRepository.shouldLoadAds()){
+            val adContainer = findViewById<FrameLayout>(R.id.ads1)
+            adContainer.visibility = View.GONE
+            adContainer.removeAllViews()
+            return
+        }
+
         if(!onlineTest()){
             if(baseRepository.isAdVip() && !BuildConfig.IS_DEV){
                 return
@@ -381,6 +394,10 @@ fun MainScreen(baseRepository: BaseRepository, activity: MainActivity) {
 
                     composable(route= TimeworkRouter.TimeworkDetailData.route){ entry->
                         TimeworkDetailDataView(navHostController = navController, arguments = entry.arguments)
+                    }
+
+                    composable(route= TimeworkRouter.TimeworkBatchSettle.route){
+                        TimeworkBatchSettleView(navHostController = navController)
                     }
 
                     composable(route= TimeworkRouter.TimeworkCloudManage.route){

@@ -38,3 +38,7 @@ labelSmall = TextStyle(
 
 val remixicon = FontFamily(Font(R.font.remixicon))
 
+
+
+val remixicon2 = FontFamily(Font(R.font.remixicon2))
+

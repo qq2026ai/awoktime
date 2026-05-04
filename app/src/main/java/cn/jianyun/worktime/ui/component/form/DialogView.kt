@@ -66,6 +66,7 @@ import cn.jianyun.worktime.util.radius
 import cn.jianyun.worktime.views.base.PrivatePolicyView
 import cn.jianyun.worktime.views.base.UserPolicyView
 import cn.jianyun.worktime.vm.AppViewModel
+import kotlinx.coroutines.delay
 
 data class SheetModel(
     var name: String = "",
@@ -230,6 +231,63 @@ fun TipDialog(title: String = "温馨提示", message: String = "这里是内容
     }, text = {
         Text(message, fontSize = 16.sp, lineHeight = 22.sp)
     })
+}
+
+@Composable
+fun CountdownTipDialog(
+    title: String = "温馨提示",
+    message: String = "这里是内容",
+    waitSeconds: Int = 5,
+    confirmText: String = "我知道了",
+    confirmAction: () -> Unit
+) {
+    var remainSeconds by remember(title, message, waitSeconds) {
+        mutableStateOf(waitSeconds.coerceAtLeast(0))
+    }
+
+    LaunchedEffect(title, message, waitSeconds) {
+        remainSeconds = waitSeconds.coerceAtLeast(0)
+        while (remainSeconds > 0) {
+            delay(1000)
+            remainSeconds -= 1
+        }
+    }
+
+    val canConfirm = remainSeconds <= 0
+    val buttonText = if (canConfirm) {
+        confirmText
+    } else {
+        "$confirmText(${remainSeconds}s)"
+    }
+
+    AlertDialog(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp),
+        onDismissRequest = {
+
+        },
+        confirmButton = {
+            Text(
+                text = buttonText,
+                fontSize = 16.sp,
+                color = if (canConfirm) colorScheme.error else colorScheme.tertiary,
+                modifier = Modifier
+                    .radius(4.dp)
+                    .clickable(enabled = canConfirm) {
+                        confirmAction()
+                    }
+                    .padding(5.dp)
+            )
+        },
+        dismissButton = null,
+        title = {
+            Text(title, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+        },
+        text = {
+            Text(message, fontSize = 16.sp, lineHeight = 22.sp)
+        }
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)

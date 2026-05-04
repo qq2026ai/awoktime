@@ -37,7 +37,7 @@ fun MakeSignView(viewModel: TimeworkMasterViewModel, navHostController: NavHostC
 
     val editWorkItem = viewModel.editWorkItem
 
-    BottomDialogView(title = "${viewModel.getCurrentDateStr()}工时打卡", onDismiss = {
+    BottomDialogView(title = "${viewModel.getFocusDateStr()}工时打卡", height = 600.dp, onDismiss = {
         viewModel.formType = FormType()
     }) {
 
@@ -165,6 +165,10 @@ fun MakeSignView(viewModel: TimeworkMasterViewModel, navHostController: NavHostC
 
         InputItemView(label = "备注", value = editWorkItem.remark, onValueChange = {
             viewModel.editWorkItem = editWorkItem.copy(remark = it)
+        })
+
+        SwitchItemView(label = "已结算", value = editWorkItem.isSettled(), onValueChange = {
+            viewModel.editWorkItem = viewModel.editWorkItem.settle(it)
         })
 
         if(viewModel.salarys.isEmpty()){

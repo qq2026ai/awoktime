@@ -370,6 +370,19 @@ fun HeaderIcon(icon: Int, size: Dp = 36.dp,fontSize: TextUnit = 20.sp,  onClick:
     }
 }
 
+@Composable
+fun HeaderIcon2(icon: Int, size: Dp = 36.dp,fontSize: TextUnit = 20.sp,  onClick: () -> Unit) {
+    Row(modifier = Modifier
+        .width(size)
+        .height(size)
+        .radius(size / 2)
+        .clickable {
+            onClick()
+        }, Arrangement.Center, verticalAlignment = Alignment.CenterVertically){
+        IconView2(icon = icon, iconSize = fontSize, color=MaterialTheme.colorScheme.primary.copy(0.8f))
+    }
+}
+
 
 
 @Composable

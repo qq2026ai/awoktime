@@ -68,4 +68,12 @@ data class TimeworkAwardData(
     fun fetchAliasName(): String {
         return typeName() + this.awardValue + "元"
     }
+
+    fun isSettled(): Boolean {
+        return extraValue == "settled"
+    }
+
+    fun settle(settled: Boolean): TimeworkAwardData {
+        return copy(extraValue = if (settled) "settled" else "")
+    }
 }

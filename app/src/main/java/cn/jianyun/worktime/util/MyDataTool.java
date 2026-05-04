@@ -267,7 +267,47 @@ public class MyDataTool {
     }
 
     public static String multipyWithString(String v1, String v2) {
-        return toFixed(multipy(v1, v2), 2);
+        return toMoneyString(multipy(v1, v2));
+    }
+
+    public static String toMoneyString(double value) {
+        BigDecimal decimal = BigDecimal.valueOf(value).setScale(2, RoundingMode.HALF_UP);
+        return normalizeMoneyDecimal(decimal);
+    }
+
+    public static String normalizeMoneyString(String value) {
+        if ("".equals(value) || "无".equals(value)) {
+            return value;
+        }
+        try {
+            BigDecimal decimal = new BigDecimal(value.trim()).setScale(2, RoundingMode.HALF_UP);
+            return normalizeMoneyDecimal(decimal);
+        }
+        catch (Exception e){
+            return value;
+        }
+    }
+
+    private static String normalizeMoneyDecimal(BigDecimal decimal) {
+        BigDecimal normalized = decimal;
+        BigDecimal absDecimal = decimal.abs();
+        BigDecimal integerPart = absDecimal.setScale(0, RoundingMode.DOWN);
+        BigDecimal fraction = absDecimal.subtract(integerPart).setScale(2, RoundingMode.HALF_UP);
+
+        if (fraction.compareTo(new BigDecimal("0.01")) <= 0) {
+            normalized = integerPart;
+        }
+        else if (fraction.compareTo(new BigDecimal("0.99")) >= 0) {
+            normalized = integerPart.add(BigDecimal.ONE);
+        }
+        else{
+            normalized = decimal.setScale(2, RoundingMode.HALF_UP);
+        }
+
+        if (decimal.signum() < 0) {
+            normalized = normalized.negate();
+        }
+        return normalized.stripTrailingZeros().toPlainString();
     }
 
     public static String timeToDecimal(String time){

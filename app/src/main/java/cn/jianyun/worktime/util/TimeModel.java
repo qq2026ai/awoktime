@@ -26,7 +26,7 @@ public class TimeModel {
     }
 
     public static String getTimeMoneyString(String time, Float money){
-        return MyDataTool.toFixed(getTimeMoney(time, money).floatValue(), 2);
+        return MyDataTool.toMoneyString(getTimeMoney(time, money));
     }
 
 

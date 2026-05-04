@@ -3,6 +3,7 @@ package cn.jianyun.worktime.module.timework.views.home
 
 
 import CalendarScreen
+import CalendarLoadingCard
 import LoadingView
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -14,15 +15,20 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
 import cn.jianyun.worktime.main.Router
@@ -30,14 +36,15 @@ import cn.jianyun.worktime.model.FormType
 import cn.jianyun.worktime.module.timework.model.TimeworkAwardData
 import cn.jianyun.worktime.module.timework.model.TimeworkData
 import cn.jianyun.worktime.module.timework.route.TimeworkRouter
-import cn.jianyun.worktime.module.timework.views.biz.TimeworkCalendarView
 import cn.jianyun.worktime.module.timework.views.biz.TimeworkCellView
+import cn.jianyun.worktime.module.timework.views.style.BottomHomeStatConfigView
 import cn.jianyun.worktime.module.timework.views.style.BottomTimeworkConfigView
 import cn.jianyun.worktime.module.timework.vm.TimeworkMasterViewModel
 import cn.jianyun.worktime.ui.component.nav.MonthChooseView
 import cn.jianyun.worktime.util.Blank
 import cn.jianyun.worktime.util.parseDate
 import cn.jianyun.worktime.ui.component.form.CancelButton
+import cn.jianyun.worktime.ui.component.form.CountdownTipDialog
 import cn.jianyun.worktime.ui.component.form.DeleteDialog
 import cn.jianyun.worktime.ui.component.form.GroupView
 import cn.jianyun.worktime.ui.component.form.LongOkButton
@@ -45,8 +52,10 @@ import cn.jianyun.worktime.ui.component.form.TipDialog
 import cn.jianyun.worktime.ui.component.form.tap
 import cn.jianyun.worktime.ui.component.nav.FlowTagView
 import cn.jianyun.worktime.ui.component.nav.HeaderIcon
+import cn.jianyun.worktime.ui.component.nav.HeaderIcon2
 import cn.jianyun.worktime.ui.component.nav.IconFont
 import cn.jianyun.worktime.ui.component.nav.IconView
+import cn.jianyun.worktime.ui.component.nav.CenterRow
 import cn.jianyun.worktime.ui.component.nav.TwoColumnView
 import cn.jianyun.worktime.ui.component.nav.VerticalRow
 import cn.jianyun.worktime.ui.theme.ThemeColor
@@ -58,7 +67,28 @@ import kotlinx.coroutines.launch
 fun TimeworkHomeView(navHostController: NavHostController) {
 
     var viewModel = hiltViewModel<TimeworkMasterViewModel>()
-    viewModel.tryReload("home")
+    val reloadSid = viewModel.baseRepository.sid
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    LaunchedEffect(reloadSid) {
+        viewModel.tryReload("home")
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.checkTodayWhenEnterHome()
+    }
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if(event == Lifecycle.Event.ON_RESUME){
+                viewModel.checkTodayWhenEnterHome()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
     Column {
 
@@ -67,13 +97,13 @@ fun TimeworkHomeView(navHostController: NavHostController) {
             .fillMaxWidth()
             , horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically)  {
 
-            MonthChooseView(value=viewModel.getCurrentDateStr(), fontSize = 18.sp, showNav = false, onChange = {
-                viewModel.currentDate = it.parseDate()
+            MonthChooseView(value=viewModel.getCurrentDateStr(), beginDay = viewModel.getMonthPickerBeginDay(), fontSize = 18.sp, showNav = false, onChange = {
+                viewModel.changeCurrentPeriod(it.parseDate())
                 viewModel.doChange()
             })
 
             Row(verticalAlignment = Alignment.CenterVertically){
-                if(!viewModel.baseRepository.isVip() && viewModel.baseRepository.appTipInfo.showPurchase){
+                if(viewModel.baseRepository.shouldShowPurchaseHint()){
                     LinkText("去广告", fontSize = 12.sp){
                         toVipPage(navHostController)
                     }
@@ -84,6 +114,9 @@ fun TimeworkHomeView(navHostController: NavHostController) {
                 }
                 HeaderIcon(icon = IconFont.box_none){
                     viewModel.formType = FormType("chooseProject")
+                }
+                HeaderIcon2(icon = if(viewModel.hideMoneyOnHome) IconFont.close_eye else IconFont.open_eye){
+                    viewModel.hideMoneyOnHome = !viewModel.hideMoneyOnHome
                 }
                 HeaderIcon(icon = IconFont.settings){
                     viewModel.formType = FormType(type= "config")
@@ -128,25 +161,22 @@ fun TimeworkHomeView(navHostController: NavHostController) {
                 }
             }
 
-            TimeworkHeaderStatView(viewModel)
+            TimeworkHeaderStatView(viewModel, maskMoney = viewModel.hideMoneyOnHome) {
+                viewModel.formType = FormType("homeStatConfig")
+            }
 
             Blank()
 
-            if(viewModel.appConfig.swipeCalendar){
-                if(viewModel.inited){
-                    CalendarScreen(viewModel) { date ->
-                        TimeworkCellView(viewModel.fetchShownData(date))
-                    }
-                }
-                else{
-                    LoadingView()
+            if(viewModel.inited){
+                CalendarScreen(viewModel) { date ->
+                    TimeworkCellView(viewModel.fetchShownData(date, maskMoney = viewModel.hideMoneyOnHome))
                 }
             }
             else{
-                TimeworkCalendarView(viewModel)
+                CalendarLoadingCard(viewModel)
             }
 
-            TimeworkDataListView(viewModel = viewModel)
+            TimeworkDataListView(viewModel = viewModel, maskMoney = viewModel.hideMoneyOnHome)
             if(viewModel.baseRepository.registDay < 3){
                 GroupView {
                     Text("提示：点击已打卡记录可以修改或删除", fontSize = 12.sp, color = ThemeColor, modifier = Modifier.clickable {
@@ -167,14 +197,14 @@ fun TimeworkHomeView(navHostController: NavHostController) {
                     viewModel.formType = FormType("showDefaultSign")
                 })
             }
-            if(!viewModel.defaultConfigs.isEmpty()){
+            if(viewModel.defaultConfigs.any { it.shown }){
                 Blank()
-                FlowTagView(options = viewModel.defaultConfigs.map{it.toSelect()}, big = true, onClick = {
+                FlowTagView(options = viewModel.defaultConfigs.filter { it.shown }.map{it.toSelect()}, big = true, onClick = {
                     viewModel.makeDefaultSign(it)
                 })
             }
             Blank()
-            LongOkButton("${viewModel.getCurrentDateStr()}工时打卡") {
+            LongOkButton("${viewModel.getFocusDateStr()}工时打卡") {
                 if(viewModel.salarys.isEmpty()) {
                     viewModel.toast("请先去添加薪水再来打卡")
                 }
@@ -186,21 +216,33 @@ fun TimeworkHomeView(navHostController: NavHostController) {
             Blank()
             TwoColumnView {
                 CancelButton("补贴", modifier=Modifier.weight(1f)) {
-                    if(viewModel.awards.filter{it.type == "award"}.isEmpty()){
+                    val awardOptions = viewModel.awards.filter{it.type == "award" && it.shown}
+                    if(awardOptions.isEmpty()){
                         viewModel.toast("请先去添加一个补贴项再来打卡")
                     }
                     else{
-                        viewModel.editAwardItem = TimeworkAwardData(awardType = "award")
+                        val defaultAward = awardOptions.first()
+                        viewModel.editAwardItem = TimeworkAwardData(
+                            awardType = "award",
+                            awardUuid = defaultAward.uuid,
+                            awardValue = defaultAward.defaultValue
+                        )
                         viewModel.formType = FormType("award")
                     }
                 }
                 Blank()
                 CancelButton("扣款", modifier=Modifier.weight(1f)) {
-                    if(viewModel.awards.filter{it.type == "fine"}.isEmpty()){
+                    val fineOptions = viewModel.awards.filter{it.type == "fine" && it.shown}
+                    if(fineOptions.isEmpty()){
                         viewModel.toast("请先去添加一个扣款项再来打卡")
                     }
                     else{
-                        viewModel.editAwardItem = TimeworkAwardData(awardType = "fine")
+                        val defaultFine = fineOptions.first()
+                        viewModel.editAwardItem = TimeworkAwardData(
+                            awardType = "fine",
+                            awardUuid = defaultFine.uuid,
+                            awardValue = defaultFine.defaultValue
+                        )
                         viewModel.formType = FormType("award")
                     }
                 }
@@ -215,6 +257,31 @@ fun TimeworkHomeView(navHostController: NavHostController) {
                     viewModel.formType = FormType("rest")
                 }
             }
+            Blank(20.dp)
+            CenterRow {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(20.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "分享与导入记工时",
+                        color = Color.Gray,
+                        fontSize = 13.sp,
+                        modifier = Modifier.clickable {
+                            navHostController.navigate(TimeworkRouter.TimeworkShare.route)
+                        }
+                    )
+                    Text(
+                        "批量结算",
+                        color = Color.Gray,
+                        fontSize = 13.sp,
+                        modifier = Modifier.clickable {
+                            navHostController.navigate(TimeworkRouter.TimeworkBatchSettle.route)
+                        }
+                    )
+                }
+            }
+            Blank(24.dp)
 
             if(viewModel.formType.isForm("sign")) {
                 MakeSignView(viewModel = viewModel, navHostController = navHostController)
@@ -262,6 +329,12 @@ fun TimeworkHomeView(navHostController: NavHostController) {
                 }
             }
 
+            if(viewModel.formType.isForm("homeStatConfig")) {
+                BottomHomeStatConfigView {
+                    viewModel.formType = FormType()
+                }
+            }
+
             if(viewModel.formType.isForm("showDefaultSign")){
                 TipDialog(title = "了解快捷打卡", message = "提前设置常用打卡记录，后续一键完成打卡，省去重复填写的麻烦") {
                     viewModel.formType = FormType()
@@ -297,17 +370,15 @@ fun TimeworkHomeView(navHostController: NavHostController) {
                     }
                 }
             }
-
-//            if(viewModel.formType.isForm(viewModel.baseRepository.curVersion)){
-//                TipDialog(title = "更新说明", message = "1.支持分享和导入工时\n2.增加坚果云绑定说明\n3.日结金额支持小数点\n4.日结支持选择时长\n5.时长支持选择到每一分钟\n6.支持显示0薪水工时\n7.修复薪水计算不准确问题\n" +
-//                        "8.支持选择24小时\n注意：首页右上角增加若干个性化设置") {
-//                    viewModel.formType = FormType()
-//                    viewModel.baseRepository.readVersion = viewModel.baseRepository.curVersion
-//                    viewModel.viewModelScope.launch {
-//                        viewModel.baseRepository.cache("readVersion", viewModel.baseRepository.curVersion)
-//                    }
-//                }
-//            }
+            if(viewModel.formType.isForm("versionFeature")) {
+                CountdownTipDialog(
+                    title = viewModel.currentVersionNoteTitle(),
+                    message = viewModel.currentVersionNoteMessage(),
+                    waitSeconds = 5
+                ) {
+                    viewModel.markCurrentVersionRead()
+                }
+            }
         }
     }
 

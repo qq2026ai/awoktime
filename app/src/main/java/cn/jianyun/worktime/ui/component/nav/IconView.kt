@@ -19,11 +19,17 @@ import cn.jianyun.worktime.util.focusColor
 import cn.jianyun.worktime.util.ifv
 import cn.jianyun.worktime.util.radius
 import cn.jianyun.worktime.ui.theme.remixicon
+import cn.jianyun.worktime.ui.theme.remixicon2
 
 
 @Composable
 fun IconView(icon: Int, iconSize: TextUnit = 14.sp, color: Color = MaterialTheme.colorScheme.primary, bold: Boolean = false, modifier:Modifier=Modifier){
     Text(icon.toChar().toString(),modifier=modifier,lineHeight=10.sp, fontFamily = remixicon, fontSize = iconSize, color=color, fontWeight = ifv(bold, FontWeight.Medium, FontWeight.Normal))
+}
+
+@Composable
+fun IconView2(icon: Int, iconSize: TextUnit = 14.sp, color: Color = MaterialTheme.colorScheme.primary, bold: Boolean = false, modifier:Modifier=Modifier){
+    Text(icon.toChar().toString(),modifier=modifier,lineHeight=10.sp, fontFamily = remixicon2, fontSize = iconSize, color=color, fontWeight = ifv(bold, FontWeight.Medium, FontWeight.Normal))
 }
 
 @Composable
@@ -107,6 +113,8 @@ class IconFont{
         const val mobile = 0xf15a
         const val thumb = 0xf207
         const val refresh = 0xf064
+        const val contrast_2 = 0xebd4
+        const val prohibited = 0xf3a1
 
 
         const val image = 0xee4b
@@ -134,6 +142,9 @@ class IconFont{
 
         const val arrow_right= 0xEA6C
 
+
+        const val open_eye = 0xECB5
+        const val close_eye = 0xECB7
 
     }
 }

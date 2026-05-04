@@ -12,6 +12,7 @@ import cn.jianyun.worktime.hilt.respo.BaseRepository
 import cn.jianyun.worktime.model.FormType
 import cn.jianyun.worktime.module.timework.dao.TimeworkAppConfigDao
 import cn.jianyun.worktime.module.timework.dto.TimeworkAppConfigDTO
+import cn.jianyun.worktime.module.timework.service.TimeworkService
 import cn.jianyun.worktime.util.MyDateTool
 import cn.jianyun.worktime.util.mlog
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -22,12 +23,14 @@ import javax.inject.Inject
 @HiltViewModel
 class TimeworkAppConfigViewModel @Inject constructor(
     val baseRepository: BaseRepository,
-    private val dao: TimeworkAppConfigDao
+    private val dao: TimeworkAppConfigDao,
+    private val timeworkService: TimeworkService
 ) : ViewModel() {
 
     var formType: FormType by mutableStateOf(FormType(type=""))
     var isDelete by mutableStateOf(false)
     var editItem by mutableStateOf(TimeworkAppConfigDTO())
+    var originalItem by mutableStateOf(TimeworkAppConfigDTO())
     var oldSid by mutableStateOf(0)
     var inited by mutableStateOf(false)
 
@@ -48,6 +51,7 @@ class TimeworkAppConfigViewModel @Inject constructor(
         viewModelScope.launch {
             oldSid = baseRepository.sid
             editItem = dao.get()
+            originalItem = editItem.copy()
             nowColor = baseRepository.getCache("themeColor", "")
             mlog("reload data")
         }
@@ -55,8 +59,11 @@ class TimeworkAppConfigViewModel @Inject constructor(
 
     fun save(ok: () -> Unit) {
         viewModelScope.launch {
-            editItem.gmtCreate = MyDateTool.toDateTimeString(Date())
-            dao.set(editItem.toConfig())
+            val nextItem = makeSavedItem()
+            dao.set(nextItem.toConfig())
+            originalItem = nextItem.copy()
+            editItem = nextItem
+            timeworkService.makeNotifyAsync()
             baseRepository.toast("设置成功")
             baseRepository.reload()
             formType = FormType()
@@ -64,13 +71,27 @@ class TimeworkAppConfigViewModel @Inject constructor(
         }
     }
 
+    fun resetChanges() {
+        editItem = originalItem.copy()
+    }
+
     fun justSave() {
         viewModelScope.launch {
-            editItem.gmtCreate = MyDateTool.toDateTimeString(Date())
-            dao.set(editItem.toConfig())
-//            baseService.makeNotify()
+            val nextItem = makeSavedItem()
+            dao.set(nextItem.toConfig())
+            originalItem = nextItem.copy()
+            editItem = nextItem
+            timeworkService.makeNotifyAsync()
             baseRepository.reload()
         }
+    }
+
+    private fun makeSavedItem(): TimeworkAppConfigDTO {
+        return editItem.copy(
+            gmtCreate = MyDateTool.toDateTimeString(Date()),
+            noticeDays = editItem.normalizedNoticeDays(),
+            noticeTimes = editItem.normalizedNoticeTimes()
+        )
     }
 
 }

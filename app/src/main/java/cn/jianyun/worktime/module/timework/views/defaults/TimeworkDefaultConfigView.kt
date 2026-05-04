@@ -96,6 +96,10 @@ fun TimeworkDefaultConfigView(navHostController: NavHostController) {
                                         Text(it.name, fontWeight = FontWeight.Medium)
                                         Blank(5.dp)
                                         TagView(tag = SelectUtil.getLabel(SelectUtil.DEFAULT_TYPES, it.type), color=SelectUtil.getColor(SelectUtil.DEFAULT_TYPES, it.type).color())
+                                        if(!it.shown){
+                                            Blank(5.dp)
+                                            TagView(tag = "已隐藏", color = Color.Gray)
+                                        }
                                     }
                                     if(it.remark != ""){
                                         HintText(label = "备注：" + it.remark)
@@ -120,7 +124,7 @@ fun TimeworkDefaultConfigView(navHostController: NavHostController) {
                     if (viewModel.formType.isSort()) {
                         SortDialogView(
                             title = "排序",
-                            options = viewModel.datalist.map { it.toSelect() },
+                            options = viewModel.datalist.filter { it.shown }.map { it.toSelect() },
                             onChange = {
                                 viewModel.doSort(it)
                                 viewModel.formType = FormType()

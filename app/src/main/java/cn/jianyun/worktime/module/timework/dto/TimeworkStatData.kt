@@ -14,6 +14,8 @@ data class TimeworkStatData(
     var dayHour: String = "",
     var awardMoney: String = "",
     var fineMoney: String = "",
+    var settledMoney: String = "",
+    var unSettledMoney: String = "",
 
     var normalDay: Int = 0,
     var overDay: Int = 0,

@@ -17,6 +17,7 @@ import cn.jianyun.worktime.ui.component.form.Cancel2Button
 import cn.jianyun.worktime.ui.component.form.InputItemView
 import cn.jianyun.worktime.ui.component.form.OkButton
 import cn.jianyun.worktime.ui.component.form.SegmentItemView
+import cn.jianyun.worktime.ui.component.form.SwitchItemView
 import cn.jianyun.worktime.ui.component.nav.DeleteText
 
 
@@ -25,7 +26,7 @@ fun MakeRestView(viewModel: TimeworkMasterViewModel, navHostController: NavHostC
 
     val editWorkItem = viewModel.editWorkItem
 
-    BottomDialogView(title = "${viewModel.getCurrentDateStr()}工时打卡", onDismiss = {
+    BottomDialogView(title = "${viewModel.getFocusDateStr()}工时打卡", onDismiss = {
         viewModel.formType = FormType()
     }) {
 
@@ -35,6 +36,10 @@ fun MakeRestView(viewModel: TimeworkMasterViewModel, navHostController: NavHostC
 
         InputItemView(label = "备注", multiLine = true, value = editWorkItem.remark, onValueChange = {
             viewModel.editWorkItem = viewModel.editWorkItem.copy(remark = it) as TimeworkData
+        })
+
+        SwitchItemView(label = "已结算", value = editWorkItem.isSettled(), onValueChange = {
+            viewModel.editWorkItem = viewModel.editWorkItem.settle(it)
         })
 
         Blank(10.dp)

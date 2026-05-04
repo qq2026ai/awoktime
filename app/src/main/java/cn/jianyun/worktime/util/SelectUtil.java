@@ -43,7 +43,7 @@ public class SelectUtil {
     public static List<SelectDO> getFromDays(){
         List<SelectDO> one = new ArrayList<>();
         one.add(new SelectDO("本月1号到月底", "1"));
-        for (int i = 2; i <= 30; i++) {
+        for (int i = 2; i <= 28; i++) {
             one.add(new SelectDO("本月" + i + "号到次月" + (i-1) + "号", "" + i));
         }
         return one;
@@ -52,6 +52,17 @@ public class SelectUtil {
     public static final List<SelectDO> BACK_TYPES = SelectUtil.initValues("本地备份", "local", "云备份", "cloud");
     public static final List<SelectDO> FEEDBACK_TYPES = SelectUtil.initValues("功能缺陷", "bug", "产品建议", "advice");
     public static final List<SelectDO> DATE_CHOOSE_TYPES = initValues("月度", "month", "年度", "year", "自定义", "self");
+    public static final List<SelectDO> HOME_STAT_TYPES = initValues(
+            "正班工时", "baseHour",
+            "加班工时", "overHour",
+            "总工时", "totalHour",
+            "日结工时", "dayHour",
+            "补扣金额", "awardMoney",
+            "日结收入", "dayMoney",
+            "日结次数", "dayCount",
+            "出勤天数", "totalDay",
+            "总收入", "totalMoney"
+    );
 
     public static final List<SelectDO> MONDAY_OR_SUNDAY = initValues("周一", "monday", "周日", "sunday");
     public static final List<SelectDO> EDIT_TYPES = initValues("编辑模式", "edit", "检查模式", "check");

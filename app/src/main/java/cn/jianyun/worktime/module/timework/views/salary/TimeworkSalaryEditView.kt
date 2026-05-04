@@ -204,7 +204,7 @@ fun TimeworkSalaryEditView(navHostController: NavHostController, arguments: Bund
 
                     //显示打卡记录
                     if(!editItem.isAdd()){
-                        LeadingHintView("打卡记录")
+                        LeadingHintView("打卡记录（${viewModel.workList.size}次）")
 
                         if(viewModel.workList.isEmpty()){
                             Text("当前薪水暂无打卡记录")

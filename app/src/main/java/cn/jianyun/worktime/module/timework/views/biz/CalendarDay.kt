@@ -27,11 +27,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import cn.jianyun.worktime.api.FestivalData
 import cn.jianyun.worktime.model.MonthDateInfo
+import cn.jianyun.worktime.module.timework.dto.TimeworkShownData
 import cn.jianyun.worktime.module.timework.vm.TimeworkMasterViewModel
 import cn.jianyun.worktime.ui.component.form.GroupView
 import cn.jianyun.worktime.ui.component.form.tap
@@ -42,7 +44,10 @@ import cn.jianyun.worktime.ui.theme.DeleteColor
 import cn.jianyun.worktime.ui.theme.ThemeColor
 import cn.jianyun.worktime.util.Blank
 import cn.jianyun.worktime.util.MyDateTool
+import cn.jianyun.worktime.util.TimeworkPeriodTool
 import cn.jianyun.worktime.util.VibrateUtil
+import cn.jianyun.worktime.util.betweenIn
+import cn.jianyun.worktime.util.dateStr
 import cn.jianyun.worktime.util.ifv
 import cn.jianyun.worktime.util.mainBg
 import cn.jianyun.worktime.util.mlog
@@ -55,21 +60,26 @@ import java.util.Calendar
 import java.util.Calendar.*
 import java.util.Date
 
+private val AwardDotGreen = Color(0xFF45B649)
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun CalendarScreen(dataModel: TimeworkMasterViewModel,  content: @Composable (Date) -> Unit) {
     val viewModel: CalendarViewModel = viewModel()
 
     val monthDataMap by viewModel.monthCache.collectAsState()
+    val festivalData: Map<String, FestivalData> = if (dataModel.appConfig.showFestival) {
+        dataModel.holidayMap
+    } else {
+        emptyMap()
+    }
 
-    // 初始定位到比较大的数字，让用户可以左右滑
-
-    // 🚀 核心设定：
-    // 设置一个巨大的中间值作为“当前月”的索引。
-    // 这样 index - INITIAL_INDEX = 0 (当前月), -1 (上个月), +1 (下个月)
-    val INITIAL_INDEX = 100
-
-    val listState = rememberLazyListState(initialFirstVisibleItemIndex = INITIAL_INDEX)
+    val listState = rememberLazyListState(
+        initialFirstVisibleItemIndex = viewModel.getIndexForDate(
+            dataModel.currentDate,
+            dataModel.appConfig.statDay
+        )
+    )
     // 🚀 替代 Pager 的关键：吸附行为
     val snapBehavior = rememberSnapFlingBehavior(lazyListState = listState)
 
@@ -84,18 +94,22 @@ fun CalendarScreen(dataModel: TimeworkMasterViewModel,  content: @Composable (Da
     LaunchedEffect(currentVisibleIndex) {
 
         mlog("monday First", dataModel.appConfig.isMondayFirst())
-        viewModel.onPageChanged(currentVisibleIndex, dataModel.appConfig.isMondayFirst(), ifv(dataModel.appConfig.showFestival, dataModel.holidayMap,
-            HashMap()))
+        viewModel.onPageChanged(
+            currentVisibleIndex,
+            dataModel.appConfig.isMondayFirst(),
+            dataModel.appConfig.statDay,
+            festivalData
+        )
 
-        dataModel.currentDate = viewModel.getDate(currentVisibleIndex, MyDateTool.getDay(dataModel.currentDate))
+        dataModel.changeCurrentPeriod(viewModel.getDate(currentVisibleIndex, dataModel.appConfig.statDay))
         dataModel.reloadData(false)
     }
 
 
     // 2. 🚀 新增：监听 dataModel.currentDate 变化 (外部跳转)
     // 比如点击“今天”，或者选择日期后，日历要滚到对应月份
-    LaunchedEffect(dataModel.currentDate) {
-        val targetIndex = viewModel.getIndexForDate(dataModel.currentDate)
+    LaunchedEffect(dataModel.currentDate, dataModel.appConfig.statDay) {
+        val targetIndex = viewModel.getIndexForDate(dataModel.currentDate, dataModel.appConfig.statDay)
 
         // 只有当目标 Index 与当前显示的 Index 不一致时才滚动
         // 这既实现了跳转，又避免了滑动更新 currentDate 时的死循环
@@ -104,10 +118,21 @@ fun CalendarScreen(dataModel: TimeworkMasterViewModel,  content: @Composable (Da
         }
     }
 
-    LaunchedEffect(dataModel.appConfig.beginDay) {
+    LaunchedEffect(
+        dataModel.appConfig.beginDay,
+        dataModel.appConfig.statDay,
+        dataModel.appConfig.showFestival,
+        dataModel.holidayMap,
+        dataModel.lastHomeCheckDay
+    ) {
         mlog("beginDayChanged", dataModel.appConfig.isMondayFirst())
-        viewModel.onPageChanged(currentVisibleIndex, dataModel.appConfig.isMondayFirst(), ifv(dataModel.appConfig.showFestival, dataModel.holidayMap,
-            HashMap()), true)
+        viewModel.onPageChanged(
+            currentVisibleIndex,
+            dataModel.appConfig.isMondayFirst(),
+            dataModel.appConfig.statDay,
+            festivalData,
+            true
+        )
     }
 
     return GroupView(horizonPadding = 0.dp) {
@@ -135,7 +160,7 @@ fun CalendarScreen(dataModel: TimeworkMasterViewModel,  content: @Composable (Da
                     when (state) {
                         null, is MonthUiState.Loading -> {
                             // 加载中状态
-                            LoadingView()
+                            LoadingView(cellHeight = dataModel.appConfig.allSize())
                         }
                         is MonthUiState.Success -> {
                             // 显示真实日历
@@ -151,11 +176,7 @@ fun CalendarScreen(dataModel: TimeworkMasterViewModel,  content: @Composable (Da
                 .mainBg(6.dp)
                 .clickable {
                     VibrateUtil.vibrate(dataModel.baseRepository.context)
-                    dataModel.currentDate = MyDateTool.getStartDayOfMonth(
-                        MyDateTool.gapDay(
-                            MyDateTool.getStartDayOfMonth(dataModel.currentDate), -5
-                        )
-                    )
+                    dataModel.changeCurrentPeriod(MyDateTool.gapMonth(dataModel.currentDate, -1))
                     dataModel.chooseDates.clear()
                     dataModel.doChange()
                 }
@@ -168,15 +189,16 @@ fun CalendarScreen(dataModel: TimeworkMasterViewModel,  content: @Composable (Da
                 Text("上个月", color = Color.Gray)
             }
 
-            if(dataModel.getCurrentDateStr() != MyDateTool.toDateString(Date())) {
+            if(dataModel.focusDate.dateStr() != MyDateTool.toDateString(Date())) {
                 Text("今天", modifier= Modifier
                     .mainBg(6.dp)
                     .clickable {
                         VibrateUtil.vibrate(dataModel.baseRepository.context)
-                        if(MyDateTool.toChineseMonthString(dataModel.currentDate) != MyDateTool.toChineseMonthString(Date())) {
+                        if(!MyDateTool.toDateString(Date()).betweenIn(dataModel.getCurrentPeriodBeginDay(), dataModel.getCurrentPeriodEndDay())) {
                             dataModel.chooseDates.clear()
                         }
-                        dataModel.currentDate = Date()
+                        dataModel.focusDate = Date()
+                        dataModel.changeCurrentPeriod(Date())
                         dataModel.doChange()
                     }
                     .width(60.dp)
@@ -188,11 +210,7 @@ fun CalendarScreen(dataModel: TimeworkMasterViewModel,  content: @Composable (Da
                 .mainBg(6.dp)
                 .clickable {
                     VibrateUtil.vibrate(dataModel.baseRepository.context)
-                    dataModel.currentDate = MyDateTool.getStartDayOfMonth(
-                        MyDateTool.gapDay(
-                            MyDateTool.getLastDayOfMonth(dataModel.currentDate), 5
-                        )
-                    )
+                    dataModel.changeCurrentPeriod(MyDateTool.gapMonth(dataModel.currentDate, 1))
                     dataModel.chooseDates.clear()
                     dataModel.doChange()
                 }
@@ -210,10 +228,22 @@ fun CalendarScreen(dataModel: TimeworkMasterViewModel,  content: @Composable (Da
 
 }
 
+@Composable
+fun CalendarLoadingCard(dataModel: TimeworkMasterViewModel) {
+    GroupView(horizonPadding = 0.dp) {
+        CalendarHeaderView(dataModel.appConfig.isMondayFirst())
+        LoadingView(cellHeight = dataModel.appConfig.allSize())
+        CalendarLoadingFooter(showToday = dataModel.focusDate.dateStr() != MyDateTool.toDateString(Date()))
+    }
+}
+
 // 🚀 新增：骨架屏组件 (看起来像日历，但是没有数字)
 // 这样在滑动等待数据时，用户感觉界面没有“消失”，只是数字还没出来
 @Composable
-fun LoadingView() {
+fun LoadingView(cellHeight: Dp = 60.dp) {
+    val cellBackground = MaterialTheme.colorScheme.surface
+    val blockColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.75f)
+
     Column(modifier = Modifier.padding(0.dp)) {
         val rows = 6 // 通常日历最大6行
         val cols = 7
@@ -223,15 +253,97 @@ fun LoadingView() {
                     Box(
                         modifier = Modifier
                             .weight(1f)
-                            .height(60.dp) // 保持和你真实 Item 差不多的高度
+                            .height(cellHeight)
                             .padding(vertical = 3.dp, horizontal = 2.dp),
-                        contentAlignment = Alignment.Center
+                        contentAlignment = Alignment.TopStart
                     ) {
-                        // 可以放一个淡淡的灰色块，或者留白
-                        // Box(modifier = Modifier.size(20.dp).background(Color.LightGray.copy(alpha = 0.3f), CircleShape))
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .border(
+                                    width = 1.dp,
+                                    color = MaterialTheme.colorScheme.surface,
+                                    shape = RoundedCornerShape(6.dp)
+                                )
+                                .background(cellBackground, RoundedCornerShape(6.dp))
+                                .padding(horizontal = 6.dp, vertical = 8.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .width(20.dp)
+                                    .height(12.dp)
+                                    .background(blockColor, RoundedCornerShape(4.dp))
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth(0.82f)
+                                    .height(16.dp)
+                                    .background(blockColor, RoundedCornerShape(4.dp))
+                            )
+                            Spacer(modifier = Modifier.height(5.dp))
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth(0.62f)
+                                    .height(12.dp)
+                                    .background(blockColor, RoundedCornerShape(4.dp))
+                            )
+                        }
                     }
                 }
             }
+            Blank(2.dp)
+        }
+    }
+}
+
+@Composable
+private fun CalendarLoadingFooter(showToday: Boolean) {
+    TwoColumnView {
+        LoadingFooterChip(
+            label = "上个月",
+            icon = IconFont.back,
+            iconFirst = true
+        )
+
+        if(showToday) {
+            Text(
+                "今天",
+                modifier = Modifier
+                    .mainBg(6.dp)
+                    .width(60.dp)
+                    .height(30.dp)
+                    .wrapContentSize(),
+                fontSize = 12.sp,
+                color = DeleteColor.copy(alpha = 0.5f)
+            )
+        }
+
+        LoadingFooterChip(
+            label = "下个月",
+            icon = IconFont.arrow_right,
+            iconFirst = false
+        )
+    }
+}
+
+@Composable
+private fun LoadingFooterChip(label: String, icon: Int, iconFirst: Boolean) {
+    Row(
+        modifier = Modifier
+            .mainBg(6.dp)
+            .padding(10.dp, 3.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        if(iconFirst){
+            IconView(icon = icon, color = Color.Gray.copy(alpha = 0.6f))
+            Blank(3.dp)
+            Text(label, color = Color.Gray.copy(alpha = 0.6f), fontSize = 12.sp)
+        }
+        else{
+            Text(label, color = Color.Gray.copy(alpha = 0.6f), fontSize = 12.sp)
+            Blank(3.dp)
+            IconView(icon = icon, color = Color.Gray.copy(alpha = 0.6f))
         }
     }
 }
@@ -276,6 +388,7 @@ fun DayCell(it: MonthDateInfo, modifier: Modifier = Modifier, dataModel: Timewor
         contentAlignment = Alignment.Center
     ) {
         if (it.day != "") {
+            val shownData = dataModel.fetchShownData(it.date, maskMoney = dataModel.hideMoneyOnHome)
             Box(contentAlignment = Alignment.TopStart, modifier = Modifier) {
                 Column(modifier = Modifier
                     .tap {
@@ -312,27 +425,88 @@ fun DayCell(it: MonthDateInfo, modifier: Modifier = Modifier, dataModel: Timewor
                             modifier = Modifier
                                 .width(26.dp)
                                 .height(30.dp).wrapContentHeight(),
+                            fontSize = 16.sp,
                             lineHeight = 12.sp,
                             fontWeight = FontWeight.Medium,
                             textAlign = TextAlign.Center)
 
-                        if(dataModel.appConfig.showLunar || dataModel.appConfig.showFestival && it.holiday) {
-                            VerticalView(text= it.lunarDay, color=it.fetchLunarColor(), fontSize=8.sp)
+                        if(it.today || dataModel.appConfig.showLunar || dataModel.appConfig.showFestival && it.holiday) {
+                            VerticalView(
+                                text = if(it.today) "今天" else it.lunarDay,
+                                color = if(it.today) DeleteColor else it.fetchLunarColor(),
+                                fontSize = 8.sp
+                            )
                         }
 
                     }
+                    DayDateDots(shownData)
                     if(it.day != ""){
                         content(it.date)
                     }
                 }
-
-//                            if(it.day != ""){
-//                                IconView(icon= IconFont.money, color = ThemeColor, iconSize = 13.sp)
-//                            }
+                DaySettleMark(shownData)
             }
 
         }
     }
+}
+
+@Composable
+private fun BoxScope.DaySettleMark(data: TimeworkShownData) {
+    if(!data.hasSettleMark()){
+        return
+    }
+    IconView(
+        icon = IconFont.money,
+        iconSize = 15.sp,
+        color = if (data.isFullSettled()) ThemeColor else Color.Gray,
+        bold = true,
+        modifier = Modifier
+            .align(Alignment.TopStart)
+            .offset(x = (-1).dp, y = (-2).dp)
+    )
+}
+
+@Composable
+private fun DayDateDots(data: TimeworkShownData) {
+    if(!data.hasDateTag()){
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(8.dp)
+        )
+        return
+    }
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(8.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(3.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if(data.hasAward()){
+                DayTagDot(color = AwardDotGreen)
+            }
+            if(data.hasFine()){
+                DayTagDot(color = DeleteColor)
+            }
+            if(data.hasRemark){
+                DayTagDot(color = Color.Gray)
+            }
+        }
+    }
+}
+
+@Composable
+private fun DayTagDot(color: Color) {
+    Box(
+        modifier = Modifier
+            .size(4.dp)
+            .background(color, RoundedCornerShape(8.dp))
+    )
 }
 
 // 月份状态：包含加载状态
@@ -359,7 +533,13 @@ class CalendarViewModel() : ViewModel() {
      * 当页面滑动时调用此方法
      * @param centerIndex 当前屏幕中间显示的 index
      */
-    fun onPageChanged(centerIndex: Int, mondayFirst: Boolean, festivalData: Map<String, FestivalData>, reload: Boolean = false) {
+    fun onPageChanged(
+        centerIndex: Int,
+        mondayFirst: Boolean,
+        statDay: String,
+        festivalData: Map<String, FestivalData>,
+        reload: Boolean = false
+    ) {
         if(reload){
             _monthCache.value = emptyMap()
         }
@@ -368,15 +548,16 @@ class CalendarViewModel() : ViewModel() {
         range.forEach { index ->
             // 如果缓存里没有，才去加载，避免重复计算
             if (!_monthCache.value.containsKey(index)) {
-                loadMonthData(index,mondayFirst , festivalData)
+                loadMonthData(index, mondayFirst, statDay, festivalData)
             }
         }
     }
 
     // 🚀 新增：根据 Date 获取 Index (用于 dataModel 变化时跳转日历)
-    fun getIndexForDate(date: Date): Int {
+    fun getIndexForDate(date: Date, statDay: String): Int {
+        val periodStart = TimeworkPeriodTool.getPeriodStartDate(date, statDay)
         val calendar = getInstance()
-        calendar.time = date
+        calendar.time = periodStart
         val year = calendar.get(YEAR)
         val month = calendar.get(MONTH) + 1 // Calendar.MONTH is 0-based
 
@@ -388,7 +569,7 @@ class CalendarViewModel() : ViewModel() {
         return INITIAL_INDEX + diffMonths
     }
 
-    fun getDate(index: Int, oldDay: Int): Date{
+    fun getDate(index: Int, statDay: String): Date{
         // 计算偏移量：当前 index 距离“中间起点”差了几个月
         val offsetMonth = index - INITIAL_INDEX
 
@@ -397,14 +578,18 @@ class CalendarViewModel() : ViewModel() {
         val targetDate = baseYearMonth.plusMonths(offsetMonth.toLong())
 
         val year = targetDate.year
-        // monthValue 是 1-12。MyDateTool 通常需要 0-11，所以这里减 1
-        // 如果你的 MyDateTool make 函数参数逻辑不同，请在此调整
         val monthIndexForTool = targetDate.monthValue
+        val beginDay = TimeworkPeriodTool.normalizeStatDay(statDay)
 
-        return MyDateTool.make("" + year, "" + monthIndexForTool, "" + oldDay)
+        return MyDateTool.make("" + year, "" + monthIndexForTool, "" + beginDay)
     }
 
-    private fun loadMonthData(index: Int, mondayFirst: Boolean, festivalData: Map<String, FestivalData>) {
+    private fun loadMonthData(
+        index: Int,
+        mondayFirst: Boolean,
+        statDay: String,
+        festivalData: Map<String, FestivalData>
+    ) {
         // 先占位，显示 Loading
         val currentCache = _monthCache.value
         val hasExistingData = currentCache[index] is MonthUiState.Success
@@ -419,32 +604,26 @@ class CalendarViewModel() : ViewModel() {
         // 🚀 关键：启动 IO 协程，绝对不阻塞主线程
         viewModelScope.launch(Dispatchers.IO) {
 
-            // --- A. 计算目标年月 ---
-            // 计算偏移量：当前 index 距离“中间起点”差了几个月
-            val offsetMonth = index - INITIAL_INDEX
-
-            // 使用 java.time API 自动处理跨年逻辑 (例如 1月 - 1 = 去年12月)
-            // 这完美解决了 "前10年、后3年" 的计算问题
-            val targetDate = baseYearMonth.plusMonths(offsetMonth.toLong())
-
-            val year = targetDate.year
-            // monthValue 是 1-12。MyDateTool 通常需要 0-11，所以这里减 1
-            // 如果你的 MyDateTool make 函数参数逻辑不同，请在此调整
-            val monthIndexForTool = targetDate.monthValue
-
-
-            val daysList = MyDateTool.getMonthInfo(
-                MyDateTool.make("" + year, "" + monthIndexForTool, "" + 1),
+            val periodStart = getDate(index, statDay)
+            val periodRange = TimeworkPeriodTool.getPeriodRange(periodStart, statDay)
+            val daysList = TimeworkPeriodTool.getPeriodInfo(
+                MyDateTool.parseDateString(periodRange.beginDate),
+                MyDateTool.parseDateString(periodRange.endDate),
                 mondayFirst,
-                festivalData, false)
+                festivalData
+            )
 
-            mlog("render:"  + index + ":" + year + "_" + monthIndexForTool, mondayFirst)
+            mlog("render:"  + index + ":" + periodRange.beginDate + "_" + periodRange.endDate, mondayFirst)
             mlog(daysList)
 
             // 4. 切回主线程更新状态
             withContext(Dispatchers.Main) {
                 _monthCache.update {
-                    it + (index to MonthUiState.Success(year, monthIndexForTool, daysList))
+                    it + (index to MonthUiState.Success(
+                        MyDateTool.getYear(periodStart),
+                        MyDateTool.getMonth(periodStart),
+                        daysList
+                    ))
                 }
             }
         }

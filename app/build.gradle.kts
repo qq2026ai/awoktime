@@ -15,8 +15,8 @@ android {
         applicationId = "cn.jianyun.worktime"
         minSdk = 26
         targetSdk = 34
-        versionCode = 52
-        versionName = "3.0.2"
+        versionCode = 60
+        versionName = "3.2.0"
         multiDexEnabled = true
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

@@ -18,6 +18,7 @@ import androidx.compose.runtime.setValue
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import cn.jianyun.worktime.BuildConfig
 import cn.jianyun.worktime.api.AppTipInfo
 import cn.jianyun.worktime.api.BaseApi
 import cn.jianyun.worktime.api.ConfigApi
@@ -69,7 +70,7 @@ class BaseRepository @Inject constructor(
     //记录当前页
     var currentPage by mutableStateOf("")
     var toast: Toast? = null
-    var sid = 0
+    var sid by mutableStateOf(0)
     var page = ""
     var inited = false
     var registDay = 0
@@ -205,6 +206,26 @@ class BaseRepository @Inject constructor(
 
     fun isVip(): Boolean{
         return isAdVip() || adVip
+    }
+
+    fun isDevAdFree(): Boolean {
+        return BuildConfig.IS_DEV
+    }
+
+    fun shouldLoadAds(): Boolean {
+        return !isDevAdFree()
+    }
+
+    fun shouldShowPurchaseHint(): Boolean {
+        return !isDevAdFree() && !isVip() && appTipInfo.showPurchase
+    }
+
+    fun shouldShowDiscountHint(): Boolean {
+        return !isDevAdFree() && !isVip() && appTipInfo.discount
+    }
+
+    fun shouldShowVipPromotion(): Boolean {
+        return !isDevAdFree() && !isRealVip()
     }
 
     fun isAdVip(): Boolean{

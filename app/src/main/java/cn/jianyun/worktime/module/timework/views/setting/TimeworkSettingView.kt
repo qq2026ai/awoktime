@@ -1,41 +1,65 @@
 package cn.jianyun.worktime.module.timework.views.setting
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
-import android.os.Build
+import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.provider.Settings
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.graphics.ColorUtils
 import androidx.core.os.bundleOf
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
-import cn.jianyun.worktime.BuildConfig
 import cn.jianyun.worktime.main.Router
-import cn.jianyun.worktime.main.navigateTo
 import cn.jianyun.worktime.main.setting.user.LoginDialog
 import cn.jianyun.worktime.main.setting.vip.VipView
 import cn.jianyun.worktime.model.FormType
 import cn.jianyun.worktime.module.timework.route.TimeworkRouter
+import cn.jianyun.worktime.module.timework.util.TimeworkVersionNote
 import cn.jianyun.worktime.module.timework.vm.TimeworkAppConfigViewModel
 import cn.jianyun.worktime.module.timework.vm.TimeworkMasterViewModel
 import cn.jianyun.worktime.ui.component.form.BottomDialogView
 import cn.jianyun.worktime.ui.component.form.GroupView
 import cn.jianyun.worktime.ui.component.form.LinkItemView
+import cn.jianyun.worktime.ui.component.form.LabelItemView
 import cn.jianyun.worktime.ui.component.form.LoadingDialog
-import cn.jianyun.worktime.ui.component.form.LongCancelButton
+import cn.jianyun.worktime.ui.component.form.MultiSelectItemView
 import cn.jianyun.worktime.ui.component.form.SelectItemView
 import cn.jianyun.worktime.ui.component.form.SettingGroupView
 import cn.jianyun.worktime.ui.component.form.SwitchItemView
+import cn.jianyun.worktime.ui.component.form.TimePickerItemView3
 import cn.jianyun.worktime.ui.component.form.TipDialog
 import cn.jianyun.worktime.ui.component.model.kt.RangeDate
 import cn.jianyun.worktime.ui.component.nav.AppLogoView
@@ -53,6 +77,7 @@ import cn.jianyun.worktime.util.Blank
 import cn.jianyun.worktime.util.MyDateTool
 import cn.jianyun.worktime.util.SelectUtil
 import cn.jianyun.worktime.util.ifv
+import cn.jianyun.worktime.util.radius
 import cn.jianyun.worktime.util.toPage
 import cn.jianyun.worktime.util.toVipPage
 import cn.jianyun.worktime.vm.AppSettingViewModel
@@ -60,16 +85,57 @@ import com.alibaba.fastjson2.toJSONString
 import kotlinx.coroutines.launch
 import java.util.Date
 
+private val CALENDAR_PERMISSIONS = arrayOf(
+    Manifest.permission.READ_CALENDAR,
+    Manifest.permission.WRITE_CALENDAR
+)
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun TimeworkSettingView(navHostController: NavHostController, activity: Activity) {
-
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
 
     var appViewModel = hiltViewModel<AppSettingViewModel>()
     var viewModel = hiltViewModel<TimeworkMasterViewModel>()
     var viewModel2 = hiltViewModel<TimeworkAppConfigViewModel>()
     viewModel2.tryReload()
+    var calendarPermissionGranted by remember {
+        mutableStateOf(hasCalendarPermission(context))
+    }
+    var enableNoticeAfterGrant by remember {
+        mutableStateOf(false)
+    }
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { result ->
+        val granted = result.values.all { it }
+        calendarPermissionGranted = granted
+        if (granted) {
+            if (enableNoticeAfterGrant) {
+                viewModel2.editItem = viewModel2.editItem.copy(showNotice = true)
+                viewModel2.justSave()
+                viewModel2.baseRepository.toast("已开启打卡提醒")
+            } else {
+                viewModel2.baseRepository.toast("日历权限已授权")
+            }
+        } else if (enableNoticeAfterGrant) {
+            viewModel2.baseRepository.toast("需要授予日历权限后才能开启打卡提醒")
+        }
+        enableNoticeAfterGrant = false
+    }
+
+    DisposableEffect(lifecycleOwner, context) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                calendarPermissionGranted = hasCalendarPermission(context)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
 
     Column{
@@ -113,7 +179,7 @@ fun TimeworkSettingView(navHostController: NavHostController, activity: Activity
                     }
                 }
 
-                if (!appViewModel.baseRepository.isVip() && appViewModel.baseRepository.appTipInfo.discount) {
+                if (appViewModel.baseRepository.shouldShowDiscountHint()) {
                     Blank()
                     GroupView(modifier = Modifier.clickable {
                         var type = appViewModel.baseRepository.appTipInfo.newPage
@@ -131,7 +197,7 @@ fun TimeworkSettingView(navHostController: NavHostController, activity: Activity
                 }
             }
 
-            if(!appViewModel.baseRepository.isRealVip()){
+            if(appViewModel.baseRepository.shouldShowVipPromotion()){
                 SettingGroupView(modifier=Modifier.clickable {
                     appViewModel.formType = FormType("vip")
                 }) {
@@ -146,14 +212,13 @@ fun TimeworkSettingView(navHostController: NavHostController, activity: Activity
                 LinkItemView(label = "快捷打卡管理") {
                     navHostController.navigate(TimeworkRouter.TimeworkDefaultManage.route)
                 }
+                SelectItemView(label = "考勤周期", value = viewModel2.editItem.normalizedStatDay(), onValueChange = {
+                    viewModel2.editItem = viewModel2.editItem.copy(statDay = it)
+                    viewModel2.justSave()
+                }, options = SelectUtil.getFromDays())
                 LinkItemView(label = "日历显示设置") {
                     navHostController.navigate(TimeworkRouter.TimeworkAppStyle.route)
                 }
-
-//                SelectItemView(label = "设置考勤周期", value = viewModel2.editItem.statDay, onValueChange = {
-//                    viewModel2.editItem.statDay = it
-//                    viewModel2.justSave()
-//                }, options = SelectUtil.getFromDays())
             }
 
             LeadingHintView("个性化")
@@ -211,33 +276,14 @@ fun TimeworkSettingView(navHostController: NavHostController, activity: Activity
 //                    navHostController.navigate(Router.NotifySetting.route)
 //                }
             }
-
-
-            Blank()
-//            SettingGroupView {
-//                SwitchItemView(label = "开启打卡提醒", value = viewModel2.editItem.showNotice, onValueChange = {
-//                    viewModel2.editItem.showNotice = it
-//                    viewModel2.justSave()
-//                })
-//                if(viewModel2.editItem.showNotice){
-//                    MultiSelectItemView(label = "哪些天提醒", columnCount = 2, maxCount = 0, value = viewModel2.editItem.noticeDays, onValueChange = {
-//                        viewModel2.editItem.noticeDays = it
-//                        viewModel2.justSave()
-//                    }, options = SelectUtil.WEEKDAYS)
-//
-//                    MultiSelectItemView(label = "哪些时间提醒", columnCount = 2, value = viewModel2.editItem.noticeTimes, onValueChange = {
-//                        viewModel2.editItem.noticeTimes = it
-//                        viewModel2.justSave()
-//                    }, options = SelectUtil.initWithUnit("", ":00", 0, 23))
-//                }
-//            }
-//            Blank(10.dp)
-
             LeadingHintView("辅助工具")
             SettingGroupView {
 
                 LinkItemView(label = "批量设置工时") {
                     navHostController.navigate(Router.BatchAdd.route)
+                }
+                LinkItemView(label = "批量结算数据") {
+                    navHostController.navigate(TimeworkRouter.TimeworkBatchSettle.route)
                 }
                 LinkItemView(label = "导出工时数据") {
 
@@ -255,6 +301,23 @@ fun TimeworkSettingView(navHostController: NavHostController, activity: Activity
                     navHostController.navigate(Router.ImportData.route)
                 }
             }
+            Blank()
+            TimeworkReminderGroup(
+                viewModel = viewModel2,
+                calendarPermissionGranted = calendarPermissionGranted,
+                onEnableRequest = {
+                    enableNoticeAfterGrant = true
+                    permissionLauncher.launch(CALENDAR_PERMISSIONS)
+                },
+                onPermissionRequest = {
+                    enableNoticeAfterGrant = false
+                    permissionLauncher.launch(CALENDAR_PERMISSIONS)
+                },
+                onOpenPermissionSetting = {
+                    openAppPermissionSetting(context)
+                }
+            )
+            Blank(10.dp)
 
             LeadingHintView("关于我们")
             SettingGroupView {
@@ -276,9 +339,9 @@ fun TimeworkSettingView(navHostController: NavHostController, activity: Activity
                         viewModel.baseRepository.copyData("1037038247", true)
                     }
                 }
-//                LinkItemView(label = "当前版本更新内容") {
-//                    viewModel.formType = FormType("upgradeInfo")
-//                }
+                LinkItemView(label = "新版本功能说明") {
+                    viewModel.formType = FormType("upgradeInfo")
+                }
 
 //                LinkItemView(label = "清空所有数据") {
 //                    viewModel.clearAll()
@@ -339,8 +402,7 @@ fun TimeworkSettingView(navHostController: NavHostController, activity: Activity
         }
 
         if(viewModel.formType.isForm("upgradeInfo")){
-            TipDialog(title = "更新说明", message = "1.支持分享和导入工时\n2.增加坚果云绑定说明\n3.日结金额支持小数点\n4.日结支持选择时长\n5.时长支持选择到每一分钟\n6.支持显示0薪水工时\n7.修复薪水计算不准确问题\n" +
-                    "8.支持选择24小时\n\n(首页右上角增加若干个性化设置，请注意查看）") {
+            TipDialog(title = TimeworkVersionNote.TITLE, message = TimeworkVersionNote.MESSAGE) {
                 viewModel.formType = FormType()
             }
         }
@@ -348,4 +410,175 @@ fun TimeworkSettingView(navHostController: NavHostController, activity: Activity
         LoadingDialog()
     }
 
+}
+
+@Composable
+private fun TimeworkReminderGroup(
+    viewModel: TimeworkAppConfigViewModel,
+    calendarPermissionGranted: Boolean,
+    onEnableRequest: () -> Unit,
+    onPermissionRequest: () -> Unit,
+    onOpenPermissionSetting: () -> Unit
+) {
+    SettingGroupView {
+        SwitchItemView(label = "开启打卡提醒", value = viewModel.editItem.showNotice, onValueChange = {
+            if (it) {
+                if (calendarPermissionGranted) {
+                    viewModel.editItem = viewModel.editItem.copy(showNotice = true)
+                    viewModel.justSave()
+                } else {
+                    onEnableRequest()
+                }
+            } else {
+                viewModel.editItem = viewModel.editItem.copy(showNotice = false)
+                viewModel.justSave()
+            }
+        })
+
+        if (!calendarPermissionGranted) {
+            GroupView(dialog = true, bottom = 0.dp, verticalPadding = 8.dp) {
+                Text(
+                    "打卡提醒会写入系统日历，需要先授权日历权限后才能生效",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.tertiary
+                )
+                Blank(6.dp)
+                Row {
+                    Text(
+                        "申请权限",
+                        color = ThemeColor,
+                        fontSize = 12.sp,
+                        modifier = Modifier.clickable {
+                            onPermissionRequest()
+                        }
+                    )
+                    Blank(14.dp)
+                    Text(
+                        "打开系统设置",
+                        color = ThemeColor,
+                        fontSize = 12.sp,
+                        modifier = Modifier.clickable {
+                            onOpenPermissionSetting()
+                        }
+                    )
+                }
+            }
+        }
+
+        if (viewModel.editItem.showNotice) {
+            MultiSelectItemView(
+                label = "提醒星期",
+                columnCount = 2,
+                maxCount = 0,
+                value = viewModel.editItem.normalizedNoticeDays(),
+                onValueChange = {
+                    viewModel.editItem = viewModel.editItem.copy(noticeDays = it)
+                    viewModel.justSave()
+                },
+                options = SelectUtil.WEEKDAYS
+            )
+            ReminderTimeEditor(viewModel)
+            Text(
+                "最多设置5个时间，提醒会自动写入未来7天的系统日历",
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.tertiary,
+                modifier = Modifier.padding(top = 2.dp, bottom = 4.dp)
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ReminderTimeEditor(viewModel: TimeworkAppConfigViewModel) {
+    val noticeTimes = viewModel.editItem.noticeTimeList()
+
+    Column {
+        if (noticeTimes.size < 5) {
+            TimePickerItemView3(
+                label = "提醒时间",
+                minuteStep = 5,
+                placeholder = "点击添加",
+                value = "",
+                onValueChange = { newTime ->
+                    if (newTime == "") {
+                        return@TimePickerItemView3
+                    }
+                    if (noticeTimes.contains(newTime)) {
+                        viewModel.baseRepository.toast("这个提醒时间已经添加过了")
+                        return@TimePickerItemView3
+                    }
+                    val nextTimes = (noticeTimes + newTime).sorted().joinToString("^")
+                    viewModel.editItem = viewModel.editItem.copy(noticeTimes = nextTimes)
+                    viewModel.justSave()
+                }
+            )
+        } else {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 14.dp),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                LabelItemView("提醒时间")
+                Text("已达5个上限", fontSize = 12.sp, color = MaterialTheme.colorScheme.tertiary)
+            }
+        }
+
+        if (noticeTimes.isNotEmpty()) {
+            Text(
+                "已选时间",
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.tertiary,
+                modifier = Modifier.padding(top = 2.dp)
+            )
+            Blank(8.dp)
+            FlowRow(modifier = Modifier.fillMaxWidth()) {
+                noticeTimes.forEach { one ->
+                    Text(
+                        text = "$one ×",
+                        modifier = Modifier
+                            .padding(end = 8.dp, bottom = 8.dp)
+                            .radius(16.dp)
+                            .clickable {
+                                val nextTimes = noticeTimes.filter { it != one }.joinToString("^")
+                                viewModel.editItem = viewModel.editItem.copy(noticeTimes = nextTimes)
+                                viewModel.justSave()
+                            }
+                            .background(ThemeColor.copy(alpha = 0.12f))
+                            .padding(horizontal = 10.dp, vertical = 5.dp),
+                        fontSize = 12.sp,
+                        color = ThemeColor
+                    )
+                }
+            }
+        } else {
+            Text(
+                "还没有设置提醒时间",
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.tertiary,
+                modifier = Modifier.padding(top = 2.dp)
+            )
+        }
+    }
+}
+
+private fun hasCalendarPermission(context: Context): Boolean {
+    val readGranted = ContextCompat.checkSelfPermission(
+        context,
+        Manifest.permission.READ_CALENDAR
+    ) == PackageManager.PERMISSION_GRANTED
+    val writeGranted = ContextCompat.checkSelfPermission(
+        context,
+        Manifest.permission.WRITE_CALENDAR
+    ) == PackageManager.PERMISSION_GRANTED
+    return readGranted && writeGranted
+}
+
+private fun openAppPermissionSetting(context: Context) {
+    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+        data = Uri.parse("package:${context.packageName}")
+        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    }
+    context.startActivity(intent)
 }

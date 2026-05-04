@@ -38,6 +38,7 @@ import cn.jianyun.worktime.ui.component.form.InputItemView
 import cn.jianyun.worktime.ui.component.form.InputNumberView
 import cn.jianyun.worktime.ui.component.form.LongDeleteButton
 import cn.jianyun.worktime.ui.component.form.LongOkButton
+import cn.jianyun.worktime.ui.component.form.LongOk2Button
 import cn.jianyun.worktime.ui.component.form.SegmentItemView
 import cn.jianyun.worktime.ui.component.form.SelectItemView
 import cn.jianyun.worktime.ui.component.form.SwitchItemView
@@ -334,6 +335,10 @@ fun TimeworkDefaultConfigEditView(navHostController: NavHostController, argument
                         viewModel.save(navHostController)
                     }
                     if(!editItem.isAdd()) {
+                        Blank()
+                        LongOk2Button(ifv(editItem.shown, "隐藏", "显示")) {
+                            viewModel.doHide(navHostController)
+                        }
                         Blank()
                         LongDeleteButton {
                             viewModel.formType = FormType.delete()

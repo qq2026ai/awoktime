@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import cn.jianyun.worktime.hilt.respo.BaseRepository
 import cn.jianyun.worktime.module.base.vm.BaseViewModel
 import cn.jianyun.worktime.module.timework.dto.TimeworkAppConfigDTO
+import cn.jianyun.worktime.module.timework.dto.TimeworkSettleSummaryData
 import cn.jianyun.worktime.module.timework.dto.TimeworkStatData
 import cn.jianyun.worktime.module.timework.model.TimeworkAppConfig
 import cn.jianyun.worktime.module.timework.model.TimeworkAward
@@ -25,6 +26,7 @@ import cn.jianyun.worktime.ui.graph.model.makeLineGraphStatData
 import cn.jianyun.worktime.ui.graph.model.makePieStatData
 import cn.jianyun.worktime.util.MyDataTool
 import cn.jianyun.worktime.util.MyDateTool
+import cn.jianyun.worktime.util.TimeworkPeriodTool
 import cn.jianyun.worktime.util.pushMapValue
 import cn.jianyun.worktime.util.timeToFloat
 import cn.jianyun.worktime.util.toFloatData
@@ -59,11 +61,29 @@ class TimeworkStatViewModel @Inject constructor(
 
     var salaryPieData by mutableStateOf(PieGraphData())
     var salaryHourPieData by mutableStateOf(PieGraphData())
+    var settleSummaryList by mutableStateOf(listOf<TimeworkSettleSummaryData>())
     var gid by mutableStateOf(0)
 
 
     fun getCurrentDateStr(): String {
         return MyDateTool.toDateString(currentDate)
+    }
+
+    fun getMonthPickerBeginDay(): String {
+        return appConfig.normalizedStatDay()
+    }
+
+    fun shouldShowMonthRangeHint(): Boolean {
+        return currentMode == "month" && appConfig.normalizedStatDay() != "1"
+    }
+
+    fun getMonthRangeHint(): String {
+        val range = realRangeDate()
+        return "统计区间：${range.beginDate} ~ ${range.endDate}"
+    }
+
+    fun changeCurrentPeriod(anchorDate: Date) {
+        currentDate = TimeworkPeriodTool.getPeriodStartDate(anchorDate, appConfig.statDay)
     }
 
     init {
@@ -83,6 +103,7 @@ class TimeworkStatViewModel @Inject constructor(
             salarys = timeworkService.listSalaryByProject(currentProjectId)
             awards = timeworkService.listAwardByProject(currentProjectId)
             appConfig = timeworkService.getAppConfig()
+            currentDate = TimeworkPeriodTool.getPeriodStartDate(currentDate, appConfig.statDay)
             justLoadData()
         }
     }
@@ -113,12 +134,30 @@ class TimeworkStatViewModel @Inject constructor(
 
         var salaryMap = mutableMapOf<String, Float>()
         var salaryInfoMap = mutableMapOf<String, String>()
+        var salaryNameMap = mutableMapOf<String, String>()
         var overSalarySet = mutableSetOf<String>()
+        val settleSummaryMap = linkedMapOf<String, TimeworkSettleSummaryData>()
         salarys.forEach{
             salaryMap.put(it.uuid, it.fetchRealHourSalary(salarys))
             salaryInfoMap.put(it.uuid, it.name + "(" + it.showValue + ")")
+            salaryNameMap.put(it.uuid, if(it.type == "over") "${it.name}(加班)" else it.name)
             if(it.type == "over"){
                 overSalarySet.add(it.uuid)
+            }
+        }
+
+        fun addSettleSummary(key: String, name: String, money: String, settled: Boolean) {
+            if(money == ""){
+                return
+            }
+            val current = settleSummaryMap.getOrPut(key) {
+                TimeworkSettleSummaryData(name = name)
+            }
+            current.totalMoney = MyDataTool.plusPriceWithString(current.totalMoney, money)
+            current.totalCount += 1
+            if(settled){
+                current.settledMoney = MyDataTool.plusPriceWithString(current.settledMoney, money)
+                current.settledCount += 1
             }
         }
 
@@ -129,42 +168,73 @@ class TimeworkStatViewModel @Inject constructor(
             var newItem = it
             if(it.mode == "hour"){
                 if(!it.onlyOver){
+                    val baseMoney = it.fetchBaseMoney(salaryMap.get(it.salaryUuid) ?: 0f)
                     statData.baseHour = MyDataTool.plusTime(statData.baseHour, it.fetchBaseHour())
                     newItem.baseSalaryInfo = salaryInfoMap.get(it.salaryUuid) ?: ""
                     newItem.baseSalaryPrice = salaryMap.get(it.salaryUuid) ?: 0f
-                    statData.baseSalary = MyDataTool.plusPriceWithString(statData.baseSalary, it.fetchBaseMoney(salaryMap.get(it.salaryUuid) ?: 0f))
+                    statData.baseSalary = MyDataTool.plusPriceWithString(statData.baseSalary, baseMoney)
+                    if(it.isSettled()){
+                        statData.settledMoney = MyDataTool.plusPriceWithString(statData.settledMoney, baseMoney)
+                    }
+                    else{
+                        statData.unSettledMoney = MyDataTool.plusPriceWithString(statData.unSettledMoney, baseMoney)
+                    }
+                    addSettleSummary("salary:${it.salaryUuid}", salaryNameMap.get(it.salaryUuid) ?: "未知薪水", baseMoney, it.isSettled())
 
                     normalDays.add(it.day)
                     totalDays.add(it.day)
                 }
                 if(it.overTime){
+                    val overMoney = it.fetchOverMoney(salaryMap.get(it.overSalaryUuid) ?: 0f)
                     statData.overHour =  MyDataTool.plusTime(statData.overHour, it.fetchOverHour())
                     newItem.overSalaryInfo = salaryInfoMap.get(it.overSalaryUuid) ?: ""
                     newItem.overSalaryPrice = salaryMap.get(it.overSalaryUuid) ?: 0f
-                    statData.overSalary = MyDataTool.plusPriceWithString(statData.overSalary, it.fetchOverMoney(salaryMap.get(it.overSalaryUuid) ?: 0f))
+                    statData.overSalary = MyDataTool.plusPriceWithString(statData.overSalary, overMoney)
+                    if(it.isSettled()){
+                        statData.settledMoney = MyDataTool.plusPriceWithString(statData.settledMoney, overMoney)
+                    }
+                    else{
+                        statData.unSettledMoney = MyDataTool.plusPriceWithString(statData.unSettledMoney, overMoney)
+                    }
+                    addSettleSummary("salary:${it.overSalaryUuid}", salaryNameMap.get(it.overSalaryUuid) ?: "未知薪水", overMoney, it.isSettled())
                     overDays.add(it.day)
                     totalDays.add(it.day)
                 }
             }
             if(it.mode == "time" && it.endTime != "") {
+                val timeMoney = it.fetchBaseMoney(salaryMap.get(it.salaryUuid) ?: 0f)
                 newItem.baseSalaryInfo = salaryInfoMap.get(it.salaryUuid) ?: ""
                 newItem.baseSalaryPrice = salaryMap.get(it.salaryUuid) ?: 0f
                 if(overSalarySet.contains(it.salaryUuid)){
                     overDays.add(it.day)
                     statData.overHour = MyDataTool.plusTime(statData.overHour, it.fetchBaseHour())
-                    statData.overSalary = MyDataTool.plusPriceWithString(statData.overSalary, it.fetchBaseMoney(salaryMap.get(it.salaryUuid) ?: 0f))
+                    statData.overSalary = MyDataTool.plusPriceWithString(statData.overSalary, timeMoney)
                 }
                 else{
                     normalDays.add(it.day)
                     statData.baseHour = MyDataTool.plusTime(statData.baseHour, it.fetchBaseHour())
-                    statData.baseSalary = MyDataTool.plusPriceWithString(statData.baseSalary, it.fetchBaseMoney(salaryMap.get(it.salaryUuid) ?: 0f))
+                    statData.baseSalary = MyDataTool.plusPriceWithString(statData.baseSalary, timeMoney)
                 }
+                if(it.isSettled()){
+                    statData.settledMoney = MyDataTool.plusPriceWithString(statData.settledMoney, timeMoney)
+                }
+                else{
+                    statData.unSettledMoney = MyDataTool.plusPriceWithString(statData.unSettledMoney, timeMoney)
+                }
+                addSettleSummary("salary:${it.salaryUuid}", salaryNameMap.get(it.salaryUuid) ?: "未知薪水", timeMoney, it.isSettled())
                 totalDays.add(it.day)
             }
             if(it.mode == "day"){
                 statData.dayCount = MyDataTool.plusNum(statData.dayCount, "1").toString();
                 statData.dayMoney = MyDataTool.plusPriceWithString(statData.dayMoney, it.amount)
                 statData.dayHour = MyDataTool.plusTime(statData.dayHour, it.fetchBaseHour())
+                if(it.isSettled()){
+                    statData.settledMoney = MyDataTool.plusPriceWithString(statData.settledMoney, it.amount)
+                }
+                else{
+                    statData.unSettledMoney = MyDataTool.plusPriceWithString(statData.unSettledMoney, it.amount)
+                }
+                addSettleSummary("day", "日结", it.amount, it.isSettled())
 
                 normalDays.add(it.day)
                 totalDays.add(it.day)
@@ -174,9 +244,23 @@ class TimeworkStatViewModel @Inject constructor(
         awardDatas.forEach{
             if(it.awardType == "award"){
                 statData.awardMoney = MyDataTool.plusPriceWithString(statData.awardMoney, it.awardValue)
+                if(it.isSettled()){
+                    statData.settledMoney = MyDataTool.plusPriceWithString(statData.settledMoney, it.awardValue)
+                }
+                else{
+                    statData.unSettledMoney = MyDataTool.plusPriceWithString(statData.unSettledMoney, it.awardValue)
+                }
+                addSettleSummary("award", "补贴", it.awardValue, it.isSettled())
             }
             else{
                 statData.fineMoney = MyDataTool.plusPriceWithString(statData.fineMoney, it.awardValue)
+                if(it.isSettled()){
+                    statData.settledMoney = MyDataTool.minusPriceWithString(statData.settledMoney, it.awardValue)
+                }
+                else{
+                    statData.unSettledMoney = MyDataTool.minusPriceWithString(statData.unSettledMoney, it.awardValue)
+                }
+                addSettleSummary("fine", "扣款", it.awardValue, it.isSettled())
             }
         }
 
@@ -184,7 +268,38 @@ class TimeworkStatViewModel @Inject constructor(
         statData.overDay = overDays.size
         statData.totalDay = totalDays.size
 
+        val orderedSummaryList = mutableListOf<TimeworkSettleSummaryData>()
+        val addedKeys = mutableSetOf<String>()
+        salarys.forEach {
+            val key = "salary:${it.uuid}"
+            settleSummaryMap[key]?.let { summary ->
+                if(summary.totalCount > 0){
+                    orderedSummaryList.add(summary)
+                    addedKeys.add(key)
+                }
+            }
+        }
+        listOf("day", "award", "fine").forEach { key ->
+            settleSummaryMap[key]?.let { summary ->
+                if(summary.totalCount > 0){
+                    orderedSummaryList.add(summary)
+                    addedKeys.add(key)
+                }
+            }
+        }
+        settleSummaryMap.forEach { (key, summary) ->
+            if(!addedKeys.contains(key) && summary.totalCount > 0){
+                orderedSummaryList.add(summary)
+            }
+        }
+
         totalStatData = statData
+        settleSummaryList = orderedSummaryList.sortedWith(
+            compareByDescending<TimeworkSettleSummaryData> { it.progress() }
+                .thenByDescending { it.totalCount }
+                .thenByDescending { MyDataTool.getPriceWithFloat(it.totalMoney, 2) }
+                .thenBy { it.name }
+        )
     }
 
     fun makeMonthGraphData(beginDay: String, endDay: String, workDatas: List<TimeworkData>, awardDatas: List<TimeworkAwardData>) {
@@ -297,8 +412,7 @@ class TimeworkStatViewModel @Inject constructor(
     fun realRangeDate():RangeDate {
         var tempRangeDate = RangeDate()
         if(currentMode == "month"){
-            tempRangeDate.beginDate = MyDateTool.getStartDayStringOfMonth(currentDate)
-            tempRangeDate.endDate = MyDateTool.getLastDayStringOfMonth(currentDate)
+            tempRangeDate = TimeworkPeriodTool.getPeriodRange(currentDate, appConfig.statDay)
         }
         else if(currentMode == "year"){
             tempRangeDate.beginDate = MyDateTool.getStartDayStringOfMonth(MyDateTool.make(currentYear, "1", "1"))

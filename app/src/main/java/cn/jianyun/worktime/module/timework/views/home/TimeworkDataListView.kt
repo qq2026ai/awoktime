@@ -1,11 +1,13 @@
 package cn.jianyun.worktime.module.timework.views.home
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -20,27 +22,28 @@ import cn.jianyun.worktime.ui.component.nav.TagView
 import cn.jianyun.worktime.ui.component.nav.TwoColumnView
 import cn.jianyun.worktime.ui.component.nav.VerticalRow
 import cn.jianyun.worktime.ui.component.nav.WithUnitView
+import cn.jianyun.worktime.ui.theme.ThemeColor
 import cn.jianyun.worktime.util.ifv
 
 @Composable
-fun TimeworkDataListView(viewModel: TimeworkMasterViewModel) {
+fun TimeworkDataListView(viewModel: TimeworkMasterViewModel, maskMoney: Boolean = false) {
 
-    if(viewModel.workDataMap[viewModel.getCurrentDateStr()] != null){
-        viewModel.workDataMap[viewModel.getCurrentDateStr()]!!.forEach{
-            TimeworkDataItemView(viewModel, it)
+    if(viewModel.workDataMap[viewModel.getFocusDateStr()] != null){
+        viewModel.workDataMap[viewModel.getFocusDateStr()]!!.forEach{
+            TimeworkDataItemView(viewModel, it, maskMoney)
         }
     }
 
-    if(viewModel.awardDataMap[viewModel.getCurrentDateStr()] != null){
-        viewModel.awardDataMap[viewModel.getCurrentDateStr()]!!.forEach{
-            TimeworkAwardItemView(viewModel, it)
+    if(viewModel.awardDataMap[viewModel.getFocusDateStr()] != null){
+        viewModel.awardDataMap[viewModel.getFocusDateStr()]!!.forEach{
+            TimeworkAwardItemView(viewModel, it, maskMoney)
         }
     }
 
 }
 
 @Composable
-fun TimeworkDataItemView(viewModel: TimeworkMasterViewModel, item: TimeworkData) {
+fun TimeworkDataItemView(viewModel: TimeworkMasterViewModel, item: TimeworkData, maskMoney: Boolean = false) {
     SwipeDeleteView(sid=item.uuid, onEdit = {
         viewModel.editWorkItem = item
         if(item.mode == "leave" || item.mode == "rest"){
@@ -53,88 +56,95 @@ fun TimeworkDataItemView(viewModel: TimeworkMasterViewModel, item: TimeworkData)
         viewModel.editWorkItem = item
         viewModel.doDeleteSign()
     }) {
-        Column{
-            if(item.mode == "hour"){
-                Column(modifier=Modifier.padding(15.dp)) {
-                    if(!item.onlyOver){
-                        TwoColumnView {
-                            Column {
-                                VerticalRow{
-                                    Text("正班")
-                                    Text(item.fetchBaseHourShownInfo())
+        Box(modifier = Modifier.fillMaxWidth()) {
+            if(item.isSettled()){
+                Box(modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = 6.dp)) {
+                    TagView(tag = "已结算", color = ThemeColor)
+                }
+            }
+            Column(modifier = Modifier.padding(top = if (item.isSettled()) 12.dp else 0.dp)){
+                if(item.mode == "hour"){
+                    Column(modifier=Modifier.padding(15.dp)) {
+                        if(!item.onlyOver){
+                            TwoColumnView {
+                                Column {
+                                    VerticalRow{
+                                        Text("正班")
+                                        Text(item.fetchBaseHourShownInfo())
+                                    }
+                                    SmallTipText(item.baseSalaryInfo)
                                 }
-                                SmallTipText(item.baseSalaryInfo)
-                                if(item.remark != ""){
-                                    SmallTipText(item.remark)
-                                }
+                                WithUnitView(text = if(maskMoney) "**" else item.fetchBaseMoney(item.baseSalaryPrice), unit = if(maskMoney) "" else "元")
                             }
-                            WithUnitView(text = item.fetchBaseMoney(item.baseSalaryPrice), unit = "元")
+                            if(item.overTime){
+                                Blank()
+                            }
                         }
                         if(item.overTime){
+                            TwoColumnView {
+                                Column {
+                                    VerticalRow{
+                                        Text("加班")
+                                        Text(item.fetchOverHourShownInfo())
+                                    }
+                                    SmallTipText(item.overSalaryInfo)
+                                }
+                                WithUnitView(text = if(maskMoney) "**" else item.fetchOverMoney(item.overSalaryPrice), unit = if(maskMoney) "" else "元")
+                            }
+                        }
+                        if(item.remark != ""){
                             Blank()
+                            SmallTipText("备注:" + item.remark)
                         }
                     }
-                    if(item.overTime){
-                        TwoColumnView {
-                            Column {
-                                VerticalRow{
-                                    Text("加班")
-                                    Text(item.fetchOverHourShownInfo())
+                }
+                if(item.mode == "day"){
+                    TwoColumnView(padding = 15.dp) {
+                        Column{
+                            Column{
+                                Text("日结打卡" + ifv(item.beginTime != "", ":" + item.fetchBaseHourShownInfo(), ""))
+                                if(item.beginTime != ""){
+                                    SmallTipText(item.beginTime + "~" + item.endTime)
                                 }
-                                SmallTipText(item.overSalaryInfo)
                                 if(item.remark != ""){
                                     SmallTipText("备注:" + item.remark)
                                 }
                             }
-                            WithUnitView(text = item.fetchOverMoney(item.overSalaryPrice), unit = "元")
                         }
+                        WithUnitView(text = if(maskMoney) "**" else item.amount, unit = if(maskMoney) "" else "元")
                     }
                 }
-            }
-            if(item.mode == "day"){
-                TwoColumnView(padding = 15.dp) {
-                    Column{
+                if(item.mode == "time"){
+                    TwoColumnView(padding = 15.dp) {
                         Column{
-                            Text("日结打卡" + ifv(item.beginTime != "", ":" + item.fetchBaseHourShownInfo(), ""))
-                            if(item.beginTime != ""){
-                                SmallTipText(item.beginTime + "~" + item.endTime)
+                            Text("时间打卡:" +  item.fetchBaseHourShownInfo() + "(" +  item.beginTime + "~" + item.endTime + ")")
+                            SmallTipText(item.baseSalaryInfo)
+                            if(item.remark != ""){
+                                SmallTipText("备注:" + item.remark)
                             }
+                        }
+                        WithUnitView(text = if(maskMoney) "**" else item.fetchBaseMoney(item.baseSalaryPrice), unit = if(maskMoney) "" else "元")
+                    }
+                }
+                if(item.mode == "leave"){
+                    TwoColumnView(padding = 15.dp) {
+                        Column{
+                            Text("请假")
                             if(item.remark != ""){
                                 SmallTipText("备注:" + item.remark)
                             }
                         }
                     }
-                    WithUnitView(text = item.amount, unit = "元")
                 }
-            }
-            if(item.mode == "time"){
-                TwoColumnView(padding = 15.dp) {
-                    Column{
-                        Text("时间打卡:" +  item.fetchBaseHourShownInfo() + "(" +  item.beginTime + "~" + item.endTime + ")")
-                        SmallTipText(item.baseSalaryInfo)
-                        if(item.remark != ""){
-                            SmallTipText("备注:" + item.remark)
-                        }
-                    }
-                    WithUnitView(text = item.fetchBaseMoney(item.baseSalaryPrice), unit = "元")
-                }
-            }
-            if(item.mode == "leave"){
-                TwoColumnView(padding = 15.dp) {
-                    Column{
-                        Text("请假")
-                        if(item.remark != ""){
-                            SmallTipText("备注:" + item.remark)
-                        }
-                    }
-                }
-            }
-            if(item.mode == "rest"){
-                TwoColumnView(padding = 15.dp) {
-                    Column{
-                        Text("休息")
-                        if(item.remark != ""){
-                            SmallTipText("备注:" + item.remark)
+                if(item.mode == "rest"){
+                    TwoColumnView(padding = 15.dp) {
+                        Column{
+                            Text("休息")
+                            if(item.remark != ""){
+                                SmallTipText("备注:" + item.remark)
+                            }
                         }
                     }
                 }
@@ -145,7 +155,7 @@ fun TimeworkDataItemView(viewModel: TimeworkMasterViewModel, item: TimeworkData)
 }
 
 @Composable
-fun TimeworkAwardItemView(viewModel: TimeworkMasterViewModel, item: TimeworkAwardData) {
+fun TimeworkAwardItemView(viewModel: TimeworkMasterViewModel, item: TimeworkAwardData, maskMoney: Boolean = false) {
 
     SwipeDeleteView(sid=item.uuid, onEdit = {
         viewModel.editAwardItem = item
@@ -154,18 +164,27 @@ fun TimeworkAwardItemView(viewModel: TimeworkMasterViewModel, item: TimeworkAwar
         viewModel.editAwardItem = item
         viewModel.doDeleteAward()
     }) {
-        TwoColumnView(padding=15.dp) {
-            Column{
-                VerticalRow {
-                    Text(item.awardName)
-                    Blank()
-                    TagView(tag = item.typeName(), color = item.typeColor())
-                }
-                if(item.remark != ""){
-                    SmallTipText("备注:" + item.remark)
+        Box(modifier = Modifier.fillMaxWidth()) {
+            if(item.isSettled()){
+                Box(modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = 6.dp)) {
+                    TagView(tag = "已结算", color = ThemeColor)
                 }
             }
-            WithUnitView(text=item.realAwardValue(), unit="元")
+            TwoColumnView(padding=15.dp, modifier = Modifier.padding(top = if (item.isSettled()) 12.dp else 0.dp)) {
+                Column{
+                    VerticalRow {
+                        Text(item.awardName)
+                        Blank()
+                        TagView(tag = item.typeName(), color = item.typeColor())
+                    }
+                    if(item.remark != ""){
+                        SmallTipText("备注:" + item.remark)
+                    }
+                }
+                WithUnitView(text = if(maskMoney) "**" else item.realAwardValue(), unit = if(maskMoney) "" else "元")
+            }
         }
     }
 

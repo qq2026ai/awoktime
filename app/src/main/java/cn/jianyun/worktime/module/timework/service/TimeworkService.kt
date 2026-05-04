@@ -34,6 +34,14 @@ import cn.jianyun.worktime.util.mlog
 import cn.jianyun.worktime.util.toMultiData
 import cn.jianyun.worktime.util.withApi
 import com.alibaba.fastjson2.JSON
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.core.content.ContextCompat
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import java.util.Date
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -50,6 +58,13 @@ class TimeworkService @Inject constructor(
     val projectDao: TimeworkProjectDao,
     val traceApi: TraceApi
 ): BaseService {
+    companion object {
+        private const val NOTIFY_REFRESH_CACHE_KEY = "timework_notice_refresh_at"
+        private const val NOTIFY_REFRESH_GAP_DAY = 3
+    }
+    private val notifyScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private var notifyJob: Job? = null
+
     override fun getRepository(): BaseRepository {
         return baseRepository
     }
@@ -63,41 +78,87 @@ class TimeworkService @Inject constructor(
     }
 
     override suspend fun makeNotify() {
+        makeNotify(force = true)
+    }
+
+    fun makeNotifyAsync(force: Boolean = true) {
+        notifyJob?.cancel()
+        notifyJob = notifyScope.launch {
+            makeNotify(force = force)
+        }
+    }
+
+    suspend fun makeNotify(force: Boolean = false) {
 
         try{
             val config = appConfigDao.get()
 
-            //校验权限
-
-            CalendarReminderUtils.cleanCalendarEvent(baseRepository.context, getNotifyBizName())
-            if(!config.showNotice || config.noticeDays == "" || config.noticeTimes == ""){
-                //清空
+            if(!hasCalendarPermission()){
                 return
             }
+            if(!config.showNotice || config.normalizedNoticeDays() == "" || config.normalizedNoticeTimes() == ""){
+                CalendarReminderUtils.cleanCalendarEvent(baseRepository.context, getNotifyBizName())
+                baseRepository.cacheLong(NOTIFY_REFRESH_CACHE_KEY, 0L)
+                return
+            }
+            if(!force && !shouldRefreshNotify()){
+                return
+            }
+
+            CalendarReminderUtils.cleanCalendarEvent(baseRepository.context, getNotifyBizName())
             //写入最近7天的通知
 
             var notifyInfos = mutableListOf<NotifyInfo>()
 
-            var now = Date()
-            for(i in 0..7){
+            val now = Date()
+            val noticeDays = config.normalizedNoticeDays().toMultiData()
+            val noticeTimes = config.noticeTimeList()
+            for(i in 0 until 7){
                 val day = MyDateTool.gapDay(now, i)
                 val weekday = MyDateTool.getWeekday(day)
-                if(config.noticeDays.toMultiData().contains("$weekday")){
+                if(noticeDays.contains("$weekday")){
                     //在指定时间内进行通知
-                    config.noticeTimes.toMultiData().forEach{
-                        val notifyTime = MyDateTool.toDateString(day) + " " + it + ":00:00"
-                        notifyInfos.add(NotifyInfo(title="记工时啦", description = "再忙也不要忘记打卡工时喔", notifyTime=notifyTime))
+                    noticeTimes.forEach{
+                        val notifyTime = MyDateTool.toDateString(day) + " " + it + ":00"
+                        val notifyInfo = NotifyInfo(title="记工时啦", description = "再忙也不要忘记打卡工时喔", notifyTime=notifyTime)
+                        if(notifyInfo.getRealTime() > System.currentTimeMillis()){
+                            notifyInfos.add(notifyInfo)
+                        }
                     }
                 }
             }
-            //先清空旧的，然后创建新的
-            notifyInfos.forEach{
-                CalendarReminderUtils.addCalendarEvent(baseRepository.context, it.copy(bizName = getNotifyBizName()))
+            if(notifyInfos.isNotEmpty()){
+                CalendarReminderUtils.batchAddCalendarEvent(
+                    baseRepository.context,
+                    notifyInfos.map { it.copy(bizName = getNotifyBizName()) }
+                )
             }
+            baseRepository.cacheLong(NOTIFY_REFRESH_CACHE_KEY, System.currentTimeMillis())
         }
         catch (e: Exception ){
 
         }
+    }
+
+    private fun hasCalendarPermission(): Boolean {
+        val readGranted = ContextCompat.checkSelfPermission(
+            baseRepository.context,
+            Manifest.permission.READ_CALENDAR
+        ) == PackageManager.PERMISSION_GRANTED
+        val writeGranted = ContextCompat.checkSelfPermission(
+            baseRepository.context,
+            Manifest.permission.WRITE_CALENDAR
+        ) == PackageManager.PERMISSION_GRANTED
+        return readGranted && writeGranted
+    }
+
+    private suspend fun shouldRefreshNotify(): Boolean {
+        val lastRefreshAt = baseRepository.longCache(NOTIFY_REFRESH_CACHE_KEY)
+        if(lastRefreshAt == 0L){
+            return true
+        }
+        val gap = System.currentTimeMillis() - lastRefreshAt
+        return gap >= NOTIFY_REFRESH_GAP_DAY * 24L * 3600 * 1000
     }
 
     override suspend fun isEmpty(): Boolean {
@@ -304,4 +365,3 @@ class TimeworkService @Inject constructor(
         return ""
     }
 }
-

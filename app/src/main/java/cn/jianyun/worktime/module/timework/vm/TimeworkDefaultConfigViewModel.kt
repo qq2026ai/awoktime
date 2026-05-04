@@ -170,6 +170,17 @@ class TimeworkDefaultConfigViewModel @Inject constructor(
 
     }
 
+    fun doHide(navHostController: NavHostController) {
+        viewModelScope.launch {
+            editItem = editItem.copy(shown = !editItem.shown)
+            timeworkService.defaultConfigDao.update(editItem)
+            baseRepository.toast("操作成功")
+            baseRepository.reload()
+            reload()
+            goBack(navHostController)
+        }
+    }
+
     fun checkSalarys(uuid: String): List<SelectDO>{
         if(salarys.find{it.uuid == uuid}?.shown == false) {
             return salarys.map{it.toSelect()}

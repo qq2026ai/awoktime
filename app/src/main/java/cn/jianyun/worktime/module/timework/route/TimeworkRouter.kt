@@ -9,6 +9,7 @@ sealed class TimeworkRouter(open val route: String) {
     object TimeworkAppStyle : TimeworkRouter("TimeworkAppStyle")
     object TimeworkAppTheme : TimeworkRouter("TimeworkAppTheme")
     object TimeworkDetailData : TimeworkRouter("TimeworkDetailData")
+    object TimeworkBatchSettle : TimeworkRouter("TimeworkBatchSettle")
     object TimeworkCloudManage : TimeworkRouter("TimeworkCloudManage")
     object TimeworkShare : TimeworkRouter("TimeworkShare")
     object TimeworkProjectManage : TimeworkRouter("TimeworkProjectManage")

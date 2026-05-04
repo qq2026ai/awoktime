@@ -103,7 +103,7 @@ class TimeworkSalaryViewModel @Inject constructor(
                         }
                     }
                 }
-                workList = rst
+                workList = rst.sortedByDescending { it.day }
             }
         }
         else{
@@ -117,11 +117,6 @@ class TimeworkSalaryViewModel @Inject constructor(
             //计算显示内容
             editItem.showValue = editItem.makeShowValue(datalist)
             if(isOk(msg)){
-                //判断同名信息
-                if(!datalist.filter{it.name == editItem.name && it.uuid != editItem.uuid}.isEmpty()){
-                    baseRepository.toast( "存在相同名称")
-                    return@launch
-                }
                 if(editItem.isAdd()){
                     editItem.gmtCreate = MyDateTool.toDateTimeString(Date())
                     editItem.uuid = uuid()

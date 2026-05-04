@@ -34,9 +34,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cn.jianyun.worktime.R
 import cn.jianyun.worktime.module.timework.vm.TimeworkMasterViewModel
-import cn.jianyun.worktime.ui.component.nav.MonthChooseView
 import cn.jianyun.worktime.util.Blank
 import cn.jianyun.worktime.util.MyDateTool
+import cn.jianyun.worktime.util.TimeworkPeriodTool
+import cn.jianyun.worktime.util.betweenIn
 import cn.jianyun.worktime.util.dateStr
 import cn.jianyun.worktime.util.ifv
 import cn.jianyun.worktime.util.mainBg
@@ -44,7 +45,6 @@ import cn.jianyun.worktime.util.parseDate
 import cn.jianyun.worktime.util.radius
 import cn.jianyun.worktime.ui.component.form.GroupView
 import cn.jianyun.worktime.ui.component.form.tap
-import cn.jianyun.worktime.ui.component.nav.CenterRow
 import cn.jianyun.worktime.ui.component.nav.IconFont
 import cn.jianyun.worktime.ui.component.nav.IconView
 import cn.jianyun.worktime.ui.component.nav.TwoColumnView
@@ -54,7 +54,6 @@ import cn.jianyun.worktime.util.VibrateUtil
 import cn.qsfty.worktime.component.CalendarHeaderView
 import cn.qsfty.worktime.component.VerticalView
 import java.util.Date
-
 
 
 @Composable
@@ -70,11 +69,7 @@ fun TimeworkCalendarView(viewModel: TimeworkMasterViewModel){
                 .mainBg(6.dp)
                 .clickable {
                     VibrateUtil.vibrate(viewModel.baseRepository.context)
-                    viewModel.currentDate = MyDateTool.getStartDayOfMonth(
-                        MyDateTool.gapDay(
-                            MyDateTool.getStartDayOfMonth(viewModel.currentDate), -5
-                        )
-                    )
+                    viewModel.changeCurrentPeriod(MyDateTool.gapMonth(viewModel.currentDate, -1))
                     viewModel.chooseDates.clear()
                     viewModel.doChange()
                 }
@@ -84,18 +79,19 @@ fun TimeworkCalendarView(viewModel: TimeworkMasterViewModel){
 
                 IconView(icon = IconFont.back, color = Color.Gray)
                 Blank(3.dp)
-                Text("上个月", color = Color.Gray)
+                Text("上个月", color = Color.Gray, fontSize = 12.sp)
             }
 
-            if(viewModel.getCurrentDateStr() != MyDateTool.toDateString(Date())) {
+            if(viewModel.focusDate.dateStr() != MyDateTool.toDateString(Date())) {
                 Text("今天", modifier= Modifier
                     .mainBg(6.dp)
                     .clickable {
                         VibrateUtil.vibrate(viewModel.baseRepository.context)
-                        if(MyDateTool.toChineseMonthString(viewModel.currentDate) != MyDateTool.toChineseMonthString(Date())) {
+                        if(!MyDateTool.toDateString(Date()).betweenIn(viewModel.getCurrentPeriodBeginDay(), viewModel.getCurrentPeriodEndDay())) {
                             viewModel.chooseDates.clear()
                         }
-                        viewModel.currentDate = Date()
+                        viewModel.focusDate = Date()
+                        viewModel.changeCurrentPeriod(Date())
                         viewModel.doChange()
                     }
                     .width(60.dp)
@@ -107,11 +103,7 @@ fun TimeworkCalendarView(viewModel: TimeworkMasterViewModel){
                 .mainBg(6.dp)
                 .clickable {
                     VibrateUtil.vibrate(viewModel.baseRepository.context)
-                    viewModel.currentDate = MyDateTool.getStartDayOfMonth(
-                        MyDateTool.gapDay(
-                            MyDateTool.getLastDayOfMonth(viewModel.currentDate), 5
-                        )
-                    )
+                    viewModel.changeCurrentPeriod(MyDateTool.gapMonth(viewModel.currentDate, 1))
                     viewModel.chooseDates.clear()
                     viewModel.doChange()
                 }
@@ -119,7 +111,7 @@ fun TimeworkCalendarView(viewModel: TimeworkMasterViewModel){
                 verticalAlignment = Alignment.CenterVertically
             ) {
 
-                Text("下个月", color = Color.Gray)
+                Text("下个月", color = Color.Gray, fontSize = 12.sp)
                 Blank(3.dp)
                 IconView(icon = IconFont.arrow_right, color = Color.Gray)
             }
@@ -130,7 +122,13 @@ fun TimeworkCalendarView(viewModel: TimeworkMasterViewModel){
 
 @Composable
 fun TimeworkCalendarBodyView(viewModel: TimeworkMasterViewModel,  content: @Composable (Date) -> Unit){
-    val monthInfos = MyDateTool.getMonthInfo(viewModel.currentDate, viewModel.appConfig.isMondayFirst(), ifv(viewModel.appConfig.showFestival, viewModel.holidayMap, mapOf()), false)
+    val range = viewModel.getCurrentPeriodRange()
+    val monthInfos = TimeworkPeriodTool.getPeriodInfo(
+        beginDate = range.beginDate.parseDate(),
+        endDate = range.endDate.parseDate(),
+        mondayFirst = viewModel.appConfig.isMondayFirst(),
+        holidayMap = ifv(viewModel.appConfig.showFestival, viewModel.holidayMap, mapOf())
+    )
     Box(contentAlignment = Alignment.Center) {
         Column(modifier = Modifier.padding(top = 10.dp, bottom = 10.dp)) {
             monthInfos.forEach{
@@ -175,12 +173,17 @@ fun TimeworkCalendarBodyView(viewModel: TimeworkMasterViewModel,  content: @Comp
                                         modifier = Modifier
                                             .width(26.dp)
                                             .height(30.dp).wrapContentHeight(),
+                                        fontSize = 17.sp,
                                         lineHeight = 12.sp,
                                         fontWeight = FontWeight.Medium,
                                         textAlign = TextAlign.Center)
 
-                                    if(viewModel.appConfig.showLunar || viewModel.appConfig.showFestival && it.holiday) {
-                                        VerticalView(text= it.lunarDay, color=it.fetchLunarColor(), fontSize=8.sp)
+                                    if(it.today || viewModel.appConfig.showLunar || viewModel.appConfig.showFestival && it.holiday) {
+                                        VerticalView(
+                                            text = if(it.today) "今天" else it.lunarDay,
+                                            color = if(it.today) DeleteColor else it.fetchLunarColor(),
+                                            fontSize = 8.sp
+                                        )
                                     }
 
                                 }

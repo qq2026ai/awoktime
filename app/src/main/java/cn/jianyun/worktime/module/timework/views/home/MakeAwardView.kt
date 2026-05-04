@@ -21,6 +21,7 @@ import cn.jianyun.worktime.ui.component.form.InputItemView
 import cn.jianyun.worktime.ui.component.form.InputNumberView
 import cn.jianyun.worktime.ui.component.form.OkButton
 import cn.jianyun.worktime.ui.component.form.ShowInputDialog
+import cn.jianyun.worktime.ui.component.form.SwitchItemView
 import cn.jianyun.worktime.ui.component.nav.DeleteLinkText
 import cn.jianyun.worktime.ui.component.nav.DeleteText
 import cn.jianyun.worktime.ui.component.nav.FlowTagView
@@ -36,7 +37,7 @@ fun MakeAwardView(viewModel: TimeworkMasterViewModel, navHostController: NavHost
 
     val editAwardItem = viewModel.editAwardItem
 
-    BottomDialogView(title="${viewModel.getCurrentDateStr()}${editAwardItem.typeName()}打卡", height = 400.dp, onDismiss = {
+    BottomDialogView(title="${viewModel.getFocusDateStr()}${editAwardItem.typeName()}打卡", height = 400.dp, onDismiss = {
         viewModel.formType = FormType()
     }) {
 
@@ -65,6 +66,10 @@ fun MakeAwardView(viewModel: TimeworkMasterViewModel, navHostController: NavHost
 
         InputItemView(label = "备注", value = editAwardItem.remark, onValueChange = {
             viewModel.editAwardItem = editAwardItem.copy(remark = it)
+        })
+
+        SwitchItemView(label = "已结算", value = editAwardItem.isSettled(), onValueChange = {
+            viewModel.editAwardItem = viewModel.editAwardItem.settle(it)
         })
 
         Blank(10.dp)

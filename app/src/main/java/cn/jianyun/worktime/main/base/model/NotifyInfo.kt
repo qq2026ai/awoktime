@@ -1,8 +1,8 @@
 package cn.jianyun.worktime.main.base.model
 
-import cn.jianyun.worktime.util.MyDateTool
-import cn.jianyun.worktime.util.MyEncryptTool
 import cn.jianyun.worktime.util.mlog
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 data class NotifyInfo(
 
@@ -21,25 +21,32 @@ data class NotifyInfo(
 ){
 
     fun getRealTime(): Long {
-        var t = System.currentTimeMillis() - 100
-        if (notifyTime.length == "2021-01-21".length) {
-            notifyTime = "$notifyTime 12:15:00"
-        }
+        val value = notifyTime.trim()
         try{
-            if (notifyTime.length == "2021-01-21 10:00:22".length || notifyTime.length == "2021-01-21 8:00:22".length || notifyTime.length == "2021-01-21 8:0:22".length) {
-                t = MyDateTool.parseDateTimeString(notifyTime).time
-            } else if (notifyTime.length == "2021-01-21 10:00".length) {
-                t = MyDateTool.parseShortDateTimeString(notifyTime).time
+            if (value.matches(Regex("^\\d{4}-\\d{2}-\\d{2}$"))) {
+                return parseStrictTime("$value 12:15:00", "yyyy-MM-dd HH:mm:ss")
+            }
+            if (value.matches(Regex("^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$"))) {
+                return parseStrictTime(value, "yyyy-MM-dd HH:mm:ss")
+            }
+            if (value.matches(Regex("^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}$"))) {
+                return parseStrictTime(value, "yyyy-MM-dd HH:mm")
             }
         }
         catch (e: Exception){
             mlog("other time", notifyTime)
         }
 
-        return t
+        return System.currentTimeMillis() - 100
     }
 
     fun uuid(): String {
         return bizName + getRealTime()
+    }
+
+    private fun parseStrictTime(value: String, pattern: String): Long {
+        val formatter = SimpleDateFormat(pattern, Locale.CHINA)
+        formatter.isLenient = false
+        return formatter.parse(value)?.time ?: throw IllegalArgumentException("invalid notify time")
     }
 }

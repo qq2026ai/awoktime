@@ -74,7 +74,7 @@ fun TimeworkAwardView(navHostController: NavHostController) {
                     //判断是否删除
                     viewModel.doDeleteOne(it)
                 }) {
-                    TwoColumnView(modifier=Modifier.padding(15.dp, 20.dp)) {
+                    TwoColumnView(modifier = Modifier.padding(horizontal = 10.dp, vertical = 15.dp)) {
                         VerticalRow {
                             Text(it.name, fontWeight = FontWeight.Medium)
                             Blank(5.dp)

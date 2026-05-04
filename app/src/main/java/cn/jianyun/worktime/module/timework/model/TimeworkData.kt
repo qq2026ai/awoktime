@@ -191,4 +191,12 @@ data class TimeworkData(
         }
         return result
     }
+
+    fun isSettled(): Boolean {
+        return extraValue == "settled"
+    }
+
+    fun settle(settled: Boolean): TimeworkData {
+        return copy(extraValue = if (settled) "settled" else "")
+    }
 }

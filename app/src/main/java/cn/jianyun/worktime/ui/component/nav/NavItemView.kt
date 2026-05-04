@@ -30,9 +30,9 @@ fun NavItemView(label: String, icon:Int, focus:Boolean, modifier:Modifier=Modifi
         .clickable {
             onClick()
         }
-        .padding(vertical = 10.dp)) {
-        IconView(icon = icon,  iconSize=20.sp,  color= ifv(focus, ThemeColor, Color.Gray), bold = true)
-        Text(label, fontSize = 10.sp, lineHeight = 10.sp, color= ifv(focus, ThemeColor, Color.Gray), fontWeight = FontWeight.Medium)
+        .padding(vertical = 9.dp)) {
+        IconView(icon = icon,  iconSize=18.sp,  color= ifv(focus, ThemeColor, Color.Gray), bold = true)
+        Text(label, fontSize = 9.sp, lineHeight = 9.sp, color= ifv(focus, ThemeColor, Color.Gray), fontWeight = FontWeight.Medium)
     }
 
 }

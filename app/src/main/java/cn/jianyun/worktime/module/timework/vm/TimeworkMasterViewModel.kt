@@ -21,10 +21,14 @@ import cn.jianyun.worktime.module.timework.model.TimeworkDefaultConfig
 import cn.jianyun.worktime.module.timework.model.TimeworkProject
 import cn.jianyun.worktime.module.timework.model.TimeworkSalary
 import cn.jianyun.worktime.module.timework.service.TimeworkService
+import cn.jianyun.worktime.module.timework.util.TimeworkVersionNote
 import cn.jianyun.worktime.util.MyDataTool
 import cn.jianyun.worktime.util.MyDateTool
+import cn.jianyun.worktime.util.MyStringTool
+import cn.jianyun.worktime.util.TimeworkPeriodTool
 import cn.jianyun.worktime.util.uuid
 import cn.jianyun.worktime.util.SelectDO
+import cn.jianyun.worktime.util.betweenIn
 import cn.jianyun.worktime.util.color
 import cn.jianyun.worktime.util.dateStr
 import cn.jianyun.worktime.util.isOk
@@ -86,6 +90,8 @@ class TimeworkMasterViewModel @Inject constructor(
     var clearMode by mutableStateOf(true)
     var lastChooseDates by mutableStateOf(listOf<String>())
     var chooseDates = mutableStateListOf<String>()
+    var hideMoneyOnHome by mutableStateOf(false)
+    var lastHomeCheckDay by mutableStateOf("")
 
     var sizeMap by mutableStateOf(mutableMapOf<String, Int>())
 
@@ -93,7 +99,39 @@ class TimeworkMasterViewModel @Inject constructor(
 
 
     fun getCurrentDateStr(): String {
-        return MyDateTool.toDateString(currentDate)
+        return currentDate.dateStr()
+    }
+
+    fun getFocusDateStr(): String {
+        return focusDate.dateStr()
+    }
+
+    fun getCurrentPeriodRange() = TimeworkPeriodTool.getPeriodRange(currentDate, appConfig.statDay)
+
+    fun getCurrentPeriodBeginDay(): String {
+        return getCurrentPeriodRange().beginDate
+    }
+
+    fun getCurrentPeriodEndDay(): String {
+        return getCurrentPeriodRange().endDate
+    }
+
+    fun getMonthPickerBeginDay(): String {
+        return appConfig.normalizedStatDay()
+    }
+
+    fun getHeaderPeriodLabel(): String {
+        val range = getCurrentPeriodRange()
+        return "${range.beginDate.substring(5)} ~ ${range.endDate.substring(5)}"
+    }
+
+    fun changeCurrentPeriod(anchorDate: Date) {
+        currentDate = TimeworkPeriodTool.getPeriodStartDate(anchorDate, appConfig.statDay)
+        val range = getCurrentPeriodRange()
+        val currentDateStr = currentDate.dateStr()
+        if (!currentDateStr.betweenIn(range.beginDate, range.endDate)) {
+            currentDate = range.beginDate.parseDate()
+        }
     }
 
 
@@ -111,7 +149,7 @@ class TimeworkMasterViewModel @Inject constructor(
             return chooseDates.contains(dateStr)
         }
         else{
-            return getCurrentDateStr() == dateStr
+            return focusDate.dateStr() == dateStr
         }
     }
 
@@ -125,12 +163,16 @@ class TimeworkMasterViewModel @Inject constructor(
                 chooseDates.add(dateStr)
             }
         }
-        currentDate = date
+        focusDate = date
+        val range = getCurrentPeriodRange()
+        if(!dateStr.betweenIn(range.beginDate, range.endDate)){
+            changeCurrentPeriod(date)
+        }
     }
 
     fun batchChoose(type: String){
-        val beginDay = MyDateTool.getStartDayStringOfMonth(currentDate)
-        val endDay = MyDateTool.getLastDayStringOfMonth(currentDate)
+        val beginDay = getCurrentPeriodBeginDay()
+        val endDay = getCurrentPeriodEndDay()
         var t = beginDay
         if(type == "clear"){
             chooseDates.clear()
@@ -187,15 +229,29 @@ class TimeworkMasterViewModel @Inject constructor(
             salarys = timeworkService.listSalaryByProject(currentProjectId)
             awards = timeworkService.listAwardByProject(currentProjectId)
             appConfig = appConfigDao.get()
+            readVersion = baseRepository.readVersion
+            currentDate = TimeworkPeriodTool.getPeriodStartDate(currentDate, appConfig.statDay)
+            if(!inited){
+                val today = Date()
+                val range = getCurrentPeriodRange()
+                focusDate = if(today.dateStr().betweenIn(range.beginDate, range.endDate)) {
+                    today
+                }
+                else{
+                    currentDate
+                }
+            }
+            lastHomeCheckDay = Date().dateStr()
             reloadData(false)
             baseRepository.finish()
-
-            inited = true
 
 
             var upgrade = baseRepository.tryUpgrade()
             if(upgrade){
                 formType = FormType("upgrade")
+            }
+            else if(shouldShowVersionNote()){
+                formType = FormType("versionFeature")
             }
 
             projects.forEach {
@@ -224,6 +280,30 @@ class TimeworkMasterViewModel @Inject constructor(
         return salarys.filter{it.shown}.map{it.toSelect()}
     }
 
+    fun currentVersionNoteTitle(): String {
+        return TimeworkVersionNote.TITLE
+    }
+
+    fun currentVersionNoteMessage(): String {
+        return TimeworkVersionNote.MESSAGE
+    }
+
+    fun shouldShowVersionNote(): Boolean {
+        return baseRepository.curVersion != "" &&
+                baseRepository.registDay > 1 &&
+                baseRepository.readVersion != baseRepository.curVersion
+    }
+
+    fun markCurrentVersionRead() {
+        val currentVersion = baseRepository.curVersion
+        baseRepository.readVersion = currentVersion
+        readVersion = currentVersion
+        formType = FormType()
+        viewModelScope.launch {
+            baseRepository.cache("readVersion", currentVersion)
+        }
+    }
+
     override fun reloadData(dataChanged: Boolean){
         //列出本月的数据
 
@@ -240,27 +320,38 @@ class TimeworkMasterViewModel @Inject constructor(
 //            }
 //        }
 
-        val beginDay = MyDateTool.getStartDayStringOfMonth(currentDate)
-        val endDay = MyDateTool.getLastDayStringOfMonth(currentDate)
-
-        var salaryMap = mutableMapOf<String, Float>()
-        var salaryInfoMap = mutableMapOf<String, String>()
-        var overSalarySet = mutableSetOf<String>()
-        salarys.forEach{
-            salaryMap.put(it.uuid, it.fetchRealHourSalary(salarys))
-            salaryInfoMap.put(it.uuid, it.toSelect().label)
-            if(it.type == "over") {
-                overSalarySet.add(it.uuid)
-            }
-        }
-        var monthStatResult = TimeworkStatData()
-        var tempWorkMap = mutableMapOf<String, List<TimeworkData>>()
-        var tempAwardMap = mutableMapOf<String, List<TimeworkAwardData>>()
         viewModelScope.launch {
             baseRepository.loading()
+            appConfig = appConfigDao.get()
+            val periodRange = getCurrentPeriodRange()
+            val beginDay = periodRange.beginDate
+            val endDay = periodRange.endDate
+            if(!currentDate.dateStr().betweenIn(beginDay, endDay)){
+                currentDate = beginDay.parseDate()
+            }
+            if(!focusDate.dateStr().betweenIn(beginDay, endDay)){
+                focusDate = currentDate
+            }
+
+            var salaryMap = mutableMapOf<String, Float>()
+            var salaryInfoMap = mutableMapOf<String, String>()
+            var overSalarySet = mutableSetOf<String>()
+            salarys.forEach{
+                salaryMap.put(it.uuid, it.fetchRealHourSalary(salarys))
+                salaryInfoMap.put(it.uuid, it.toSelect().label)
+                if(it.type == "over") {
+                    overSalarySet.add(it.uuid)
+                }
+            }
+            var monthStatResult = TimeworkStatData()
+            var normalDays = mutableSetOf<String>()
+            var overDays = mutableSetOf<String>()
+            var totalDays = mutableSetOf<String>()
+            var tempWorkMap = mutableMapOf<String, List<TimeworkData>>()
+            var tempAwardMap = mutableMapOf<String, List<TimeworkAwardData>>()
             withContext(Dispatchers.IO) {
                 try{
-                    holidayMap = baseRepository.fetchHoliday(MyDateTool.getYear(currentDate))
+                    holidayMap = baseRepository.fetchHoliday(MyDateTool.getYear(beginDay.parseDate()))
                 }
                 catch(e:Exception){
                     holidayMap = mapOf()
@@ -279,13 +370,20 @@ class TimeworkMasterViewModel @Inject constructor(
                     restColor = appConfig.restBg.color(),
                     showHour = appConfig.showHour,
                     showMoney = appConfig.showMoney,
+                    showDateTag = appConfig.showDateTag,
                     leaveColor = appConfig.leaveBg.color(),
                     hourSize = appConfig.hourSize,
                     moneySize = appConfig.moneySize
                 )
+                var totalSettleCount = 0
+                var settledCount = 0
                 workDatas.filter{it.day == t}.forEach{
 
                     var newItem = it
+                    totalSettleCount += 1
+                    if(it.isSettled()){
+                        settledCount += 1
+                    }
 
                     if(it.mode == "hour"){
                         item.hour = MyDataTool.plusTime(item.hour, it.fetchTotalHour())
@@ -297,6 +395,8 @@ class TimeworkMasterViewModel @Inject constructor(
 
                             monthStatResult.baseHour = MyDataTool.plusTime(monthStatResult.baseHour, it.fetchBaseHour())
                             monthStatResult.baseSalary = MyDataTool.plusPriceWithString(monthStatResult.baseSalary, it.fetchBaseMoney(salaryMap.get(it.salaryUuid) ?: 0f))
+                            normalDays.add(it.day)
+                            totalDays.add(it.day)
                         }
                         if(it.overTime){
 
@@ -306,6 +406,8 @@ class TimeworkMasterViewModel @Inject constructor(
 
                             monthStatResult.overHour = MyDataTool.plusTime(monthStatResult.overHour, it.fetchOverHour())
                             monthStatResult.overSalary = MyDataTool.plusPriceWithString(monthStatResult.overSalary, it.fetchOverMoney(salaryMap.get(it.overSalaryUuid) ?: 0f))
+                            overDays.add(it.day)
+                            totalDays.add(it.day)
 
                         }
                     }
@@ -319,11 +421,14 @@ class TimeworkMasterViewModel @Inject constructor(
                         if(overSalarySet.contains(it.salaryUuid)){
                             monthStatResult.overHour = MyDataTool.plusTime(monthStatResult.overHour, it.fetchBaseHour())
                             monthStatResult.overSalary = MyDataTool.plusPriceWithString(monthStatResult.overSalary, it.fetchBaseMoney(salaryMap.get(it.salaryUuid) ?: 0f))
+                            overDays.add(it.day)
                         }
                         else{
                             monthStatResult.baseHour = MyDataTool.plusTime(monthStatResult.baseHour, it.fetchBaseHour())
                             monthStatResult.baseSalary = MyDataTool.plusPriceWithString(monthStatResult.baseSalary, it.fetchBaseMoney(salaryMap.get(it.salaryUuid) ?: 0f))
+                            normalDays.add(it.day)
                         }
+                        totalDays.add(it.day)
 
                     }
                     if(it.mode == "day"){
@@ -333,6 +438,8 @@ class TimeworkMasterViewModel @Inject constructor(
                         monthStatResult.dayCount = MyDataTool.plusNum(monthStatResult.dayCount, "1").toString()
                         monthStatResult.dayMoney = MyDataTool.plusPriceWithString(monthStatResult.dayMoney, it.amount)
                         monthStatResult.dayHour = MyDataTool.plusTime(monthStatResult.dayHour, it.fetchBaseHour())
+                        normalDays.add(it.day)
+                        totalDays.add(it.day)
                     }
 
                     if(it.mode == "leave"){
@@ -340,6 +447,9 @@ class TimeworkMasterViewModel @Inject constructor(
                     }
                     if(it.mode == "rest"){
                         item.rest = true
+                    }
+                    if(MyStringTool.isNotBlank(it.remark)){
+                        item.hasRemark = true
                     }
 
                     var old = tempWorkMap.get(t)
@@ -360,6 +470,10 @@ class TimeworkMasterViewModel @Inject constructor(
                     }
 
                     var newItem = it
+                    totalSettleCount += 1
+                    if(it.isSettled()){
+                        settledCount += 1
+                    }
                     newItem.awardName = awards.find{it.uuid == newItem.awardUuid}?.name ?: ""
                     if(it.awardType == "award"){
                         monthStatResult.awardMoney = MyDataTool.plusPriceWithString(monthStatResult.awardMoney, newItem.awardValue)
@@ -379,10 +493,22 @@ class TimeworkMasterViewModel @Inject constructor(
                     else{
                         tempAwardMap[t] = listOf(newItem)
                     }
+                    if(MyStringTool.isNotBlank(it.remark)){
+                        item.hasRemark = true
+                    }
+                }
+                item.settleState = when {
+                    totalSettleCount == 0 -> "none"
+                    settledCount == 0 -> "none"
+                    settledCount == totalSettleCount -> "full"
+                    else -> "partial"
                 }
                 result[t] = item
                 t = MyDateTool.nextDay(t);
             }
+            monthStatResult.normalDay = normalDays.size
+            monthStatResult.overDay = overDays.size
+            monthStatResult.totalDay = totalDays.size
             shownDataMap = result
             workDataMap = tempWorkMap
             awardDataMap = tempAwardMap
@@ -396,9 +522,13 @@ class TimeworkMasterViewModel @Inject constructor(
             if(dataChanged){
                 baseRepository.reload()
             }
+
+            if(!inited){
+                inited = true
+            }
             baseRepository.finish()
 
-            mlog("make cache...", MyDateTool.getYearMonth(currentDate))
+            mlog("make cache...", "${beginDay}_${endDay}")
 
         }
     }
@@ -477,7 +607,7 @@ class TimeworkMasterViewModel @Inject constructor(
             }
         }
         else{
-            var todays = workDataMap[getCurrentDateStr()]
+            var todays = workDataMap[getFocusDateStr()]
             //判断今天是否已经有此配置
             if(todays != null && todays.filter {
                     it.mode == workItem.mode &&
@@ -495,7 +625,7 @@ class TimeworkMasterViewModel @Inject constructor(
                 viewModelScope.launch {
                     workItem.uuid = uuid()
                     workItem.projectUuid = currentProjectId
-                    workItem.day = getCurrentDateStr()
+                    workItem.day = getFocusDateStr()
                     timeworkService.dataDao.insert(workItem)
                     baseRepository.playTap()
                     reloadData(true)
@@ -509,7 +639,7 @@ class TimeworkMasterViewModel @Inject constructor(
         val workItem = deleteType.editItem as TimeworkData
         viewModelScope.launch {
             workItem.uuid = uuid()
-            workItem.day = getCurrentDateStr()
+            workItem.day = getFocusDateStr()
             workItem.projectUuid = currentProjectId
             timeworkService.dataDao.insert(workItem)
             baseRepository.playTap()
@@ -535,7 +665,7 @@ class TimeworkMasterViewModel @Inject constructor(
             }
         }
         else{
-            var todays = awardDataMap[getCurrentDateStr()]
+            var todays = awardDataMap[getFocusDateStr()]
             //判断今天是否已经有此配置
             if(todays != null && todays.filter {
                     it.awardUuid == awardItem.awardUuid
@@ -546,7 +676,7 @@ class TimeworkMasterViewModel @Inject constructor(
                 viewModelScope.launch {
                     awardItem.uuid = uuid()
                     awardItem.projectUuid = currentProjectId
-                    awardItem.day = getCurrentDateStr()
+                    awardItem.day = getFocusDateStr()
                     timeworkService.awardDataDao.insert(awardItem)
                     baseRepository.playTap()
                     reloadData(true)
@@ -563,7 +693,7 @@ class TimeworkMasterViewModel @Inject constructor(
         viewModelScope.launch {
             awardItem.uuid = uuid()
             awardItem.projectUuid = currentProjectId
-            awardItem.day = getCurrentDateStr()
+            awardItem.day = getFocusDateStr()
             timeworkService.awardDataDao.insert(awardItem)
             baseRepository.playTap()
             baseRepository.reload()
@@ -572,7 +702,7 @@ class TimeworkMasterViewModel @Inject constructor(
     }
 
     fun doSaveWorkData() {
-        editWorkItem.day = getCurrentDateStr()
+        editWorkItem.day = getFocusDateStr()
         val msg = editWorkItem.isValid()
         if(!isOk(msg)){
             baseRepository.toast(msg)
@@ -624,7 +754,7 @@ class TimeworkMasterViewModel @Inject constructor(
     }
 
     fun doSaveAwardData() {
-        editAwardItem.day = getCurrentDateStr()
+        editAwardItem.day = getFocusDateStr()
         val msg = editAwardItem.isValid()
         if(!isOk(msg)){
             baseRepository.toast(msg)
@@ -660,13 +790,18 @@ class TimeworkMasterViewModel @Inject constructor(
         }
     }
 
-    fun fetchShownData(date: Date): TimeworkShownData {
+    fun fetchShownData(date: Date, maskMoney: Boolean = false): TimeworkShownData {
         val t = shownDataMap[MyDateTool.toDateString(date)]
         if(t != null){
-            return t.copy(hourSize = appConfig.hourSize, moneySize = appConfig.moneySize)
+            return t.copy(
+                hourSize = appConfig.hourSize,
+                moneySize = appConfig.moneySize,
+                showDateTag = appConfig.showDateTag,
+                maskMoney = maskMoney
+            )
         }
         else{
-            return TimeworkShownData()
+            return TimeworkShownData(showDateTag = appConfig.showDateTag, maskMoney = maskMoney)
         }
     }
 
@@ -712,6 +847,29 @@ class TimeworkMasterViewModel @Inject constructor(
         reloadData(false)
     }
 
+    fun checkTodayWhenEnterHome() {
+        if(!inited){
+            return
+        }
+        val today = Date()
+        val todayStr = today.dateStr()
+        if(lastHomeCheckDay == todayStr){
+            return
+        }
+        lastHomeCheckDay = todayStr
+
+        val targetPeriodDate = TimeworkPeriodTool.getPeriodStartDate(today, appConfig.statDay)
+        val needRefresh = focusDate.dateStr() != todayStr || currentDate.dateStr() != targetPeriodDate.dateStr()
+        if(!needRefresh){
+            return
+        }
+
+        chooseDates.clear()
+        focusDate = today
+        currentDate = targetPeriodDate
+        reloadData(false)
+    }
+
     fun clearAll() {
 
         viewModelScope.launch {
@@ -728,6 +886,7 @@ class TimeworkMasterViewModel @Inject constructor(
             timeworkService.setProjectId(it.uuid)
             currentProjectId = it.uuid
             currentProjectName = it.name
+            focusDate = currentDate
             reloadData(true)
         }
     }
@@ -749,7 +908,7 @@ class TimeworkMasterViewModel @Inject constructor(
             defaultItem.shown = true
             defaultItem.ordinal = -System.currentTimeMillis()
             defaultItem.projectUuid = timeworkService.getProjectId()
-            defaultItem.config = JSON.toJSONString(editWorkItem)
+            defaultItem.config = JSON.toJSONString(editWorkItem.settle(false))
             timeworkService.defaultConfigDao.insert(defaultItem)
             reloadData(true)
             defaultConfigs = timeworkService.defaultConfigDao.listByProject(timeworkService.getProjectId())
@@ -768,4 +927,3 @@ data class HomePageData(
     var awardDataMap : Map<String, List<TimeworkAwardData>> = mapOf(),
     var monthStatModel :TimeworkStatData = TimeworkStatData()
 )
-

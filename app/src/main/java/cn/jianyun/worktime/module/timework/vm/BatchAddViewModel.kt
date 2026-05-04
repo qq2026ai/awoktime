@@ -22,6 +22,7 @@ import cn.jianyun.worktime.module.timework.model.TimeworkSalary
 import cn.jianyun.worktime.module.timework.service.TimeworkService
 import cn.jianyun.worktime.util.MyDataTool
 import cn.jianyun.worktime.util.MyDateTool
+import cn.jianyun.worktime.util.MyStringTool
 import cn.jianyun.worktime.util.SelectDO
 import cn.jianyun.worktime.util.color
 import cn.jianyun.worktime.util.isOk
@@ -123,6 +124,7 @@ class BatchAddViewModel @Inject constructor(
         }
 
         var monthStatResult = TimeworkStatData()
+        var totalDays = mutableSetOf<String>()
 
         var tempWorkMap = mutableMapOf<String, List<TimeworkData>>()
         var tempAwardMap = mutableMapOf<String, List<TimeworkAwardData>>()
@@ -151,6 +153,7 @@ class BatchAddViewModel @Inject constructor(
                     restColor = appConfig.restBg.color(),
                     showHour = appConfig.showHour,
                     showMoney = appConfig.showMoney,
+                    showDateTag = appConfig.showDateTag,
                     leaveColor = appConfig.leaveBg.color(),
                     hourSize = appConfig.hourSize,
                     moneySize = appConfig.moneySize
@@ -169,6 +172,7 @@ class BatchAddViewModel @Inject constructor(
 
                             monthStatResult.baseHour = MyDataTool.plusTime(monthStatResult.baseHour, it.fetchBaseHour())
                             monthStatResult.baseSalary = MyDataTool.plusPriceWithString(monthStatResult.baseSalary, it.fetchBaseMoney(salaryMap.get(it.salaryUuid) ?: 0f))
+                            totalDays.add(it.day)
                         }
                         if(it.overTime){
 
@@ -178,6 +182,7 @@ class BatchAddViewModel @Inject constructor(
 
                             monthStatResult.overHour = MyDataTool.plusTime(monthStatResult.overHour, it.fetchOverHour())
                             monthStatResult.overSalary = MyDataTool.plusPriceWithString(monthStatResult.overSalary, it.fetchOverMoney(salaryMap.get(it.overSalaryUuid) ?: 0f))
+                            totalDays.add(it.day)
 
                         }
                     }
@@ -191,6 +196,7 @@ class BatchAddViewModel @Inject constructor(
 
                         monthStatResult.baseHour = MyDataTool.plusTime(monthStatResult.baseHour, it.fetchBaseHour())
                         monthStatResult.baseSalary = MyDataTool.plusPriceWithString(monthStatResult.baseSalary, it.fetchBaseMoney(salaryMap.get(it.salaryUuid) ?: 0f))
+                        totalDays.add(it.day)
 
                     }
                     if(it.mode == "day"){
@@ -198,6 +204,7 @@ class BatchAddViewModel @Inject constructor(
                         monthStatResult.dayCount = MyDataTool.plusNum(monthStatResult.dayCount, "1").toString()
                         monthStatResult.dayMoney = MyDataTool.plusPriceWithString(monthStatResult.dayMoney, it.amount)
                         monthStatResult.dayHour = MyDataTool.plusTime(monthStatResult.dayHour, it.fetchBaseHour())
+                        totalDays.add(it.day)
                     }
 
                     if(it.mode == "leave"){
@@ -205,6 +212,9 @@ class BatchAddViewModel @Inject constructor(
                     }
                     if(it.mode == "rest"){
                         item.rest = true
+                    }
+                    if(MyStringTool.isNotBlank(it.remark)){
+                        item.hasRemark = true
                     }
 
                     var old = tempWorkMap.get(t)
@@ -248,6 +258,7 @@ class BatchAddViewModel @Inject constructor(
                 result[t] = item
                 t = MyDateTool.nextDay(t);
             }
+            monthStatResult.totalDay = totalDays.size
             shownDataMap = result
             workDataMap = tempWorkMap
             awardDataMap = tempAwardMap
@@ -418,10 +429,10 @@ class BatchAddViewModel @Inject constructor(
     fun fetchShownData(date: Date): TimeworkShownData {
         val t = shownDataMap[MyDateTool.toDateString(date)]
         if(t != null){
-            return t.copy(hourSize = appConfig.hourSize, moneySize = appConfig.moneySize)
+            return t.copy(hourSize = appConfig.hourSize, moneySize = appConfig.moneySize, showDateTag = appConfig.showDateTag)
         }
         else{
-            return TimeworkShownData()
+            return TimeworkShownData(showDateTag = appConfig.showDateTag)
         }
     }
 

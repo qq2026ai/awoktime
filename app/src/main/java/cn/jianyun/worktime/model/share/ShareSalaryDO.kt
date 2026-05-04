@@ -92,14 +92,21 @@ object ShareUtil {
 
     fun toAppConfig(config: TimeworkAppConfigDTO): ShareAppConfig{
         return ShareAppConfig(
+                statDay = config.normalizedStatDay(),
+                homeStatFields = config.normalizedHomeStatFields(),
                 beginDay= config.beginDay,
                 showLunar =  config.showLunar,
                 showFestival = config.showFestival,
+                showDateTag = config.showDateTag,
                 hourBg =  config.hourBg,
                 restBg = config. restBg,
                 moneyBg =  config.moneyBg,
                 showHour =  config.showHour,
                 showMoney =  config.showMoney,
+                showNotice = config.showNotice,
+                noticeTime = config.noticeTime,
+                noticeDays = config.normalizedNoticeDays(),
+                noticeTimes = config.normalizedNoticeTimes(),
                 exportCenter = config.exportCenter,
                 exportRemark = config.exportRemark,
                 showHLine =config.showHLine
@@ -284,9 +291,12 @@ data class ShareAwardDO(
 
 
 data class ShareAppConfig(
+    val statDay: String = "1",
+    val homeStatFields: String = "baseHour^overHour^awardMoney^totalMoney",
     val beginDay: String = "monday",
     val showLunar: Boolean = true,
     val showFestival: Boolean = true,
+    val showDateTag: Boolean = false,
     val showHour: Boolean = true,
     val showMoney: Boolean = false,
     val showHLine: Boolean = false,
@@ -332,14 +342,21 @@ data class ShareAppConfig(
     fun toAppConfig(): TimeworkAppConfigDTO {
         return TimeworkAppConfigDTO(
             uuid = "sys",
+            statDay = statDay,
+            homeStatFields = homeStatFields,
             beginDay= beginDay,
             showLunar =  showLunar,
             showFestival =  showFestival,
+            showDateTag = showDateTag,
             hourBg =  hourBg,
             restBg =  restBg,
             moneyBg =  moneyBg,
             showHour =  showHour,
             showMoney =  showMoney,
+            showNotice = showNotice,
+            noticeTime = noticeTime,
+            noticeDays = noticeDays,
+            noticeTimes = noticeTimes,
 
             exportCenter = exportCenter,
             exportRemark = exportRemark,
