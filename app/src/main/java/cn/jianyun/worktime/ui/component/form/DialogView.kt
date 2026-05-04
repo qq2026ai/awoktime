@@ -217,10 +217,28 @@ fun ConfirmDialog(title:String, okLabel: String = "确定", cancelLabel: String 
 
 
 @Composable
-fun TipDialog(title: String = "温馨提示", message: String = "这里是内容",  cancelAction: ()->Unit) {
-    AlertDialog(modifier = Modifier
-        .fillMaxWidth()
-        .padding(horizontal = 20.dp),onDismissRequest = {
+fun TipDialog(
+    title: String = "温馨提示",
+    message: String = "这里是内容",
+    widthFraction: Float? = null,
+    cancelAction: ()->Unit
+) {
+    val realWidthFraction = widthFraction?.coerceIn(0.6f, 0.98f)
+
+    AlertDialog(
+        modifier = if (realWidthFraction != null) {
+            Modifier
+                .fillMaxWidth(realWidthFraction)
+                .padding(horizontal = 8.dp)
+        } else {
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+        },
+        properties = DialogProperties(
+            usePlatformDefaultWidth = realWidthFraction == null
+        ),
+        onDismissRequest = {
 
     }, confirmButton = {
         LinkText(label = "我知道了", padding=5.dp, fontSize = 16.sp, color=colorScheme.error) {

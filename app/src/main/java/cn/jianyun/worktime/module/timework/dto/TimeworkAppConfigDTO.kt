@@ -51,6 +51,7 @@ data class TimeworkAppConfigDTO(
     var hourSize: Int = 12, //文字颜色
     var moneySize: Int = 12, //金额字体
     var homeStatSize: Int = 15, //首页顶部统计字号
+    var homeStatSingleLine: Boolean = false, //首页顶部统计是否单行显示
 
     var statDay: String = "1", //考勤周期开始日
     var homeStatFields: String = "baseHour^overHour^awardMoney^totalMoney",
@@ -86,10 +87,14 @@ data class TimeworkAppConfigDTO(
             "totalHour",
             "dayHour",
             "awardMoney",
+            "pureAwardMoney",
+            "fineMoney",
             "dayMoney",
             "dayCount",
             "totalDay",
-            "totalMoney"
+            "totalMoney",
+            "settledMoney",
+            "unSettledMoney"
         )
         val selected = homeStatFields
             .split("^")

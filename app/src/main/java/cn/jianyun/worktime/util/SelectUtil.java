@@ -58,10 +58,14 @@ public class SelectUtil {
             "总工时", "totalHour",
             "日结工时", "dayHour",
             "补扣金额", "awardMoney",
+            "补贴金额", "pureAwardMoney",
+            "扣款金额", "fineMoney",
             "日结收入", "dayMoney",
             "日结次数", "dayCount",
             "出勤天数", "totalDay",
-            "总收入", "totalMoney"
+            "总收入", "totalMoney",
+            "已结算", "settledMoney",
+            "待结算", "unSettledMoney"
     );
 
     public static final List<SelectDO> MONDAY_OR_SUNDAY = initValues("周一", "monday", "周日", "sunday");

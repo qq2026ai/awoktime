@@ -388,45 +388,66 @@ class TimeworkMasterViewModel @Inject constructor(
                     if(it.mode == "hour"){
                         item.hour = MyDataTool.plusTime(item.hour, it.fetchTotalHour())
                         if(!it.onlyOver){
+                            val baseMoney = it.fetchBaseMoney(salaryMap.get(it.salaryUuid) ?: 0f)
 
                             newItem.baseSalaryInfo = salaryInfoMap.get(it.salaryUuid) ?: ""
                             newItem.baseSalaryPrice = salaryMap.get(it.salaryUuid) ?: 0f
-                            item.money = MyDataTool.plusPriceWithString(item.money, it.fetchBaseMoney(salaryMap.get(it.salaryUuid) ?: 0f))
+                            item.money = MyDataTool.plusPriceWithString(item.money, baseMoney)
 
                             monthStatResult.baseHour = MyDataTool.plusTime(monthStatResult.baseHour, it.fetchBaseHour())
-                            monthStatResult.baseSalary = MyDataTool.plusPriceWithString(monthStatResult.baseSalary, it.fetchBaseMoney(salaryMap.get(it.salaryUuid) ?: 0f))
+                            monthStatResult.baseSalary = MyDataTool.plusPriceWithString(monthStatResult.baseSalary, baseMoney)
+                            if(it.isSettled()){
+                                monthStatResult.settledMoney = MyDataTool.plusPriceWithString(monthStatResult.settledMoney, baseMoney)
+                            }
+                            else{
+                                monthStatResult.unSettledMoney = MyDataTool.plusPriceWithString(monthStatResult.unSettledMoney, baseMoney)
+                            }
                             normalDays.add(it.day)
                             totalDays.add(it.day)
                         }
                         if(it.overTime){
+                            val overMoney = it.fetchOverMoney(salaryMap.get(it.overSalaryUuid) ?: 0f)
 
                             newItem.overSalaryInfo = salaryInfoMap.get(it.overSalaryUuid) ?: ""
                             newItem.overSalaryPrice = salaryMap.get(it.overSalaryUuid) ?: 0f
-                            item.money = MyDataTool.plusPriceWithString(item.money, it.fetchOverMoney(salaryMap.get(it.overSalaryUuid) ?: 0f))
+                            item.money = MyDataTool.plusPriceWithString(item.money, overMoney)
 
                             monthStatResult.overHour = MyDataTool.plusTime(monthStatResult.overHour, it.fetchOverHour())
-                            monthStatResult.overSalary = MyDataTool.plusPriceWithString(monthStatResult.overSalary, it.fetchOverMoney(salaryMap.get(it.overSalaryUuid) ?: 0f))
+                            monthStatResult.overSalary = MyDataTool.plusPriceWithString(monthStatResult.overSalary, overMoney)
+                            if(it.isSettled()){
+                                monthStatResult.settledMoney = MyDataTool.plusPriceWithString(monthStatResult.settledMoney, overMoney)
+                            }
+                            else{
+                                monthStatResult.unSettledMoney = MyDataTool.plusPriceWithString(monthStatResult.unSettledMoney, overMoney)
+                            }
                             overDays.add(it.day)
                             totalDays.add(it.day)
 
                         }
                     }
                     if(it.mode == "time" && it.endTime != "") {
+                        val timeMoney = it.fetchBaseMoney(salaryMap.get(it.salaryUuid) ?: 0f)
 
                         item.hour = MyDataTool.plusTime(item.hour, it.fetchBaseHour())
                         newItem.baseSalaryInfo = salaryInfoMap.get(it.salaryUuid) ?: ""
                         newItem.baseSalaryPrice = salaryMap.get(it.salaryUuid) ?: 0f
-                        item.money = MyDataTool.plusPriceWithString(item.money, it.fetchBaseMoney(salaryMap.get(it.salaryUuid) ?: 0f))
+                        item.money = MyDataTool.plusPriceWithString(item.money, timeMoney)
 
                         if(overSalarySet.contains(it.salaryUuid)){
                             monthStatResult.overHour = MyDataTool.plusTime(monthStatResult.overHour, it.fetchBaseHour())
-                            monthStatResult.overSalary = MyDataTool.plusPriceWithString(monthStatResult.overSalary, it.fetchBaseMoney(salaryMap.get(it.salaryUuid) ?: 0f))
+                            monthStatResult.overSalary = MyDataTool.plusPriceWithString(monthStatResult.overSalary, timeMoney)
                             overDays.add(it.day)
                         }
                         else{
                             monthStatResult.baseHour = MyDataTool.plusTime(monthStatResult.baseHour, it.fetchBaseHour())
-                            monthStatResult.baseSalary = MyDataTool.plusPriceWithString(monthStatResult.baseSalary, it.fetchBaseMoney(salaryMap.get(it.salaryUuid) ?: 0f))
+                            monthStatResult.baseSalary = MyDataTool.plusPriceWithString(monthStatResult.baseSalary, timeMoney)
                             normalDays.add(it.day)
+                        }
+                        if(it.isSettled()){
+                            monthStatResult.settledMoney = MyDataTool.plusPriceWithString(monthStatResult.settledMoney, timeMoney)
+                        }
+                        else{
+                            monthStatResult.unSettledMoney = MyDataTool.plusPriceWithString(monthStatResult.unSettledMoney, timeMoney)
                         }
                         totalDays.add(it.day)
 
@@ -438,6 +459,12 @@ class TimeworkMasterViewModel @Inject constructor(
                         monthStatResult.dayCount = MyDataTool.plusNum(monthStatResult.dayCount, "1").toString()
                         monthStatResult.dayMoney = MyDataTool.plusPriceWithString(monthStatResult.dayMoney, it.amount)
                         monthStatResult.dayHour = MyDataTool.plusTime(monthStatResult.dayHour, it.fetchBaseHour())
+                        if(it.isSettled()){
+                            monthStatResult.settledMoney = MyDataTool.plusPriceWithString(monthStatResult.settledMoney, it.amount)
+                        }
+                        else{
+                            monthStatResult.unSettledMoney = MyDataTool.plusPriceWithString(monthStatResult.unSettledMoney, it.amount)
+                        }
                         normalDays.add(it.day)
                         totalDays.add(it.day)
                     }
@@ -477,10 +504,22 @@ class TimeworkMasterViewModel @Inject constructor(
                     newItem.awardName = awards.find{it.uuid == newItem.awardUuid}?.name ?: ""
                     if(it.awardType == "award"){
                         monthStatResult.awardMoney = MyDataTool.plusPriceWithString(monthStatResult.awardMoney, newItem.awardValue)
+                        if(it.isSettled()){
+                            monthStatResult.settledMoney = MyDataTool.plusPriceWithString(monthStatResult.settledMoney, newItem.awardValue)
+                        }
+                        else{
+                            monthStatResult.unSettledMoney = MyDataTool.plusPriceWithString(monthStatResult.unSettledMoney, newItem.awardValue)
+                        }
                         item.awardValue = MyDataTool.plusPriceWithString(item.awardValue, it.awardValue)
                     }
                     else{
-                        monthStatResult.awardMoney = MyDataTool.minusPriceWithString(monthStatResult.awardMoney, newItem.awardValue)
+                        monthStatResult.fineMoney = MyDataTool.plusPriceWithString(monthStatResult.fineMoney, newItem.awardValue)
+                        if(it.isSettled()){
+                            monthStatResult.settledMoney = MyDataTool.minusPriceWithString(monthStatResult.settledMoney, newItem.awardValue)
+                        }
+                        else{
+                            monthStatResult.unSettledMoney = MyDataTool.minusPriceWithString(monthStatResult.unSettledMoney, newItem.awardValue)
+                        }
                         item.fineValue = MyDataTool.plusPriceWithString(item.fineValue, it.awardValue)
                     }
 

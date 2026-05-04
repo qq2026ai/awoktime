@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -57,14 +58,19 @@ fun TimeworkHeaderStatView(
     ) {
         HomeStatContent(
             statItems = statItems,
-            preferredValueSize = viewModel.appConfig.normalizedHomeStatSize()
+            preferredValueSize = viewModel.appConfig.normalizedHomeStatSize(),
+            singleLine = viewModel.appConfig.homeStatSingleLine
         )
     }
 
 }
 
 @Composable
-private fun HomeStatContent(statItems: List<HomeStatItem>, preferredValueSize: Int) {
+private fun HomeStatContent(
+    statItems: List<HomeStatItem>,
+    preferredValueSize: Int,
+    singleLine: Boolean
+) {
     val valueSize = when {
         statItems.size <= 2 -> preferredValueSize.coerceIn(12, 30)
         statItems.size == 3 -> preferredValueSize.coerceAtMost(28).coerceAtLeast(12)
@@ -141,7 +147,7 @@ private fun HomeStatContent(statItems: List<HomeStatItem>, preferredValueSize: I
             }
         }
 
-        statItems.size <= 5 -> {
+        statItems.size <= 4 -> {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -167,16 +173,60 @@ private fun HomeStatContent(statItems: List<HomeStatItem>, preferredValueSize: I
         }
 
         else -> {
+            if(singleLine) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState())
+                        .padding(horizontal = 8.dp)
+                ) {
+                    statItems.forEach {
+                        Box(
+                            modifier = Modifier
+                                .width(scrollItemWidth)
+                                .padding(vertical = 6.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            statNumView(
+                                title = it.title,
+                                titleFontSize = titleFontSize,
+                                fontSize = valueFontSize,
+                                value = it.value
+                            )
+                        }
+                    }
+                }
+            } else {
+                HomeStatFlowLayout(
+                    statItems = statItems,
+                    titleFontSize = titleFontSize,
+                    valueFontSize = valueFontSize
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun HomeStatFlowLayout(
+    statItems: List<HomeStatItem>,
+    titleFontSize: TextUnit,
+    valueFontSize: TextUnit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 4.dp)
+    ) {
+        statItems.chunked(4).forEach { rowItems ->
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState())
-                    .padding(horizontal = 8.dp)
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                statItems.forEach {
+                rowItems.forEach {
                     Box(
                         modifier = Modifier
-                            .width(scrollItemWidth)
+                            .weight(1f)
                             .padding(vertical = 6.dp),
                         contentAlignment = Alignment.Center
                     ) {
@@ -187,6 +237,13 @@ private fun HomeStatContent(statItems: List<HomeStatItem>, preferredValueSize: I
                             value = it.value
                         )
                     }
+                }
+                repeat(4 - rowItems.size) {
+                    Spacer(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(vertical = 6.dp)
+                    )
                 }
             }
         }
@@ -201,10 +258,14 @@ private fun makeHomeStatItems(fields: String, statData: TimeworkStatData, maskMo
             "totalHour" -> HomeStatItem("总工时", formatHour(statData.fetchTotalHour()))
             "dayHour" -> HomeStatItem("日结工时", formatHour(statData.dayHour))
             "awardMoney" -> HomeStatItem("补扣金额", formatSignedMoney(statData.awardMoney, maskMoney))
+            "pureAwardMoney" -> HomeStatItem("补贴金额", formatMoney(statData.awardMoney, maskMoney))
+            "fineMoney" -> HomeStatItem("扣款金额", formatMoney(statData.fineMoney, maskMoney))
             "dayMoney" -> HomeStatItem("日结收入", formatMoney(statData.dayMoney, maskMoney))
             "dayCount" -> HomeStatItem("日结次数", formatCount(statData.dayCount, "次"))
             "totalDay" -> HomeStatItem("出勤天数", formatCount("${statData.totalDay}", "天"))
             "totalMoney" -> HomeStatItem("总收入", formatMoney(statData.fetchTotalMoney(), maskMoney))
+            "settledMoney" -> HomeStatItem("已结算", formatMoney(statData.settledMoney, maskMoney))
+            "unSettledMoney" -> HomeStatItem("待结算", formatMoney(statData.unSettledMoney, maskMoney))
             else -> null
         }
     }.filter {
@@ -219,10 +280,14 @@ private fun findStatValue(title: String): String {
         "总工时" -> "totalHour"
         "日结工时" -> "dayHour"
         "补扣金额" -> "awardMoney"
+        "补贴金额" -> "pureAwardMoney"
+        "扣款金额" -> "fineMoney"
         "日结收入" -> "dayMoney"
         "日结次数" -> "dayCount"
         "出勤天数" -> "totalDay"
         "总收入" -> "totalMoney"
+        "已结算" -> "settledMoney"
+        "待结算" -> "unSettledMoney"
         else -> ""
     }
 }

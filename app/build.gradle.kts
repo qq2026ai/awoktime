@@ -15,8 +15,8 @@ android {
         applicationId = "cn.jianyun.worktime"
         minSdk = 26
         targetSdk = 34
-        versionCode = 60
-        versionName = "3.2.0"
+        versionCode = 61
+        versionName = "3.0.1"
         multiDexEnabled = true
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -148,6 +148,14 @@ dependencies {
     implementation(files("libs/beizi_adapter_5.2.2.0.aar"))
     implementation(files("libs/beizi_fusion_sdk_5.2.2.0.aar"))
     implementation("com.pangle.cn:mediation-gdt-adapter:4.660.1530.1")
+
+
+
+    implementation(files("libs/adgain-sdk-4.2.3.2.aar"))
+    implementation(files("libs/AdMulXSDK_release_10692.aar"))
+    implementation(files("libs/AdMulXSDKGromal_release_1004.aar"))
+    implementation(files("libs/mm_ad_sdk_7.5.14.7_android.aar"))
+    implementation(files("libs/ms-sdk_3.0.1.10_release.aar"))
 
 
 }

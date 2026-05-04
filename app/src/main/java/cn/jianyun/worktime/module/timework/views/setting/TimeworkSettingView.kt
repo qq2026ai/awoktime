@@ -402,7 +402,11 @@ fun TimeworkSettingView(navHostController: NavHostController, activity: Activity
         }
 
         if(viewModel.formType.isForm("upgradeInfo")){
-            TipDialog(title = TimeworkVersionNote.TITLE, message = TimeworkVersionNote.MESSAGE) {
+            TipDialog(
+                title = TimeworkVersionNote.TITLE,
+                message = TimeworkVersionNote.MESSAGE,
+                widthFraction = 0.94f
+            ) {
                 viewModel.formType = FormType()
             }
         }
