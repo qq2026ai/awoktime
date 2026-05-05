@@ -3,9 +3,6 @@ package cn.jianyun.worktime.main
 import TimeworkAppThemeView
 import android.annotation.SuppressLint
 import android.os.Bundle
-import android.view.View
-import android.view.ViewGroup
-import android.widget.FrameLayout
 import androidx.activity.ComponentActivity
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.padding
@@ -61,21 +58,11 @@ import cn.jianyun.worktime.util.color
 import cn.jianyun.worktime.util.ifv
 import cn.jianyun.worktime.util.mlog
 import cn.jianyun.worktime.vm.AppSettingViewModel
-import com.bytedance.sdk.openadsdk.AdSlot
-import com.bytedance.sdk.openadsdk.CSJAdError
-import com.bytedance.sdk.openadsdk.CSJSplashAd
-import com.bytedance.sdk.openadsdk.TTAdConfig
-import com.bytedance.sdk.openadsdk.TTAdNative
-import com.bytedance.sdk.openadsdk.TTAdSdk
-import com.bytedance.sdk.openadsdk.TTCustomController
-import com.bytedance.sdk.openadsdk.mediation.init.MediationPrivacyConfig
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import pro.dxys.ad.AdSdk
 import javax.inject.Inject
 
 class SplashViewModel: ViewModel() {
@@ -101,31 +88,16 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var timeworkService: TimeworkService
 
-    lateinit var dyAd: TTAdNative
-
-    var initAppTime = 0L
-
-    var dy_app_id = ifv(BuildConfig.IS_DEV, "5768810", "5768810")
-    var dy_ad_id = ifv(BuildConfig.IS_DEV, "103821515", "103821515")
-
     override fun onDestroy() {
         //退出页面时，置空所以的Message
         super.onDestroy()
     }
 
-    var lastAdTime: Long = 0L
-    var initDy: Boolean = false
-
-    var initGdk: Boolean = false
-
     private val viewModel: SplashViewModel by viewModels()
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         //启动定时刷新任务
-
-        initAppTime = System.currentTimeMillis()
 
         val splashScreen = installSplashScreen()
         splashScreen.setKeepOnScreenCondition{viewModel.isLoading.value}
@@ -146,195 +118,16 @@ class MainActivity : ComponentActivity() {
                 ThemeColor = baseRepository.getCache("themeColor", "#45B787").color()
                 baseRepository.initApp()
                 timeworkService.makeNotifyAsync(force = false)
-                loadAds()
             } catch (e: Exception) {
                 // 处理异常
             }
         }
     }
 
-    fun onlineTest(): Boolean{
-        return baseRepository.loginUser.username == "15068790467"
-    }
-
-    fun loadAds(){
-        if(!baseRepository.shouldLoadAds()){
-            val adContainer = findViewById<FrameLayout>(R.id.ads1)
-            adContainer.visibility = View.GONE
-            adContainer.removeAllViews()
-            return
-        }
-
-        if(!onlineTest()){
-            if(baseRepository.isAdVip() && !BuildConfig.IS_DEV){
-                return
-            }
-        }
-
-        if(!initGdk){
-            AdSdk.initAdn(getApplication(),"jjjgs");
-            initGdk = true
-        }
-        if(System.currentTimeMillis() - lastAdTime < 1000 * baseRepository.appTipInfo.screenAdsGapMinute * 60){
-            return
-        }
-        lastAdTime = System.currentTimeMillis()
-        initDyAd()
-    }
-
-    override fun onRestart() {
-        super.onRestart()
-        loadAds()
-    }
-
     override fun onResume() {
         super.onResume()
         mlog("activity onResume")
     }
-
-    private fun initDyAd(){
-        if(initDy){
-            mlog("prepare2 initDyAds")
-            loadSplashAd()
-            return
-        }
-
-        mlog("prepare initDyAds")
-        //初始化聚合sdk
-        val that = this
-        TTAdSdk.init(baseRepository.context, buildConfig())
-        TTAdSdk.start(object : TTAdSdk.Callback {
-            override fun success() {
-                //初始化成功
-                //在初始化成功回调之后进行广告加载
-                val adNativeLoader = TTAdSdk.getAdManager().createAdNative(that)
-                dyAd = adNativeLoader
-                loadSplashAd()
-                initDy = true
-            }
-            override fun fail(code: Int, msg: String?) {
-
-            }
-        })
-    }
-
-    fun buildSplashAdslot(): AdSlot {
-        val displayMetrics = resources.displayMetrics
-        val screenWidthPx = displayMetrics.widthPixels
-        val screenHeightPx = displayMetrics.heightPixels
-        val density: Float = displayMetrics.density
-        return AdSlot.Builder()
-            .setCodeId(dy_ad_id) //广告位ID
-            .setIsAutoPlay(true)
-            .setImageAcceptedSize(screenWidthPx, screenHeightPx)
-            .setExpressViewAcceptedSize(screenWidthPx / density, screenHeightPx / density)
-            .build()
-    }
-
-    // 加载开屏广告
-    fun loadSplashAd() {
-        val that = this
-        dyAd.loadSplashAd(buildSplashAdslot(), object : TTAdNative.CSJSplashAdListener {
-            override fun onSplashLoadSuccess(p0: CSJSplashAd?) {
-                mlog("loadDyAdSucess")
-                mlog("loadAdsTime", System.currentTimeMillis() - initAppTime)
-            }
-
-            override fun onSplashLoadFail(error: CSJAdError?) {
-
-            }
-
-            override fun onSplashRenderSuccess(csjSplashAd: CSJSplashAd?) {
-                //广告渲染成功，在此展示广告
-                val pr = findViewById<FrameLayout>(R.id.ads1)
-                pr.visibility = View.VISIBLE
-                baseRepository.adVip = true
-                showSplashAd(csjSplashAd, pr); //注 ：splashContainer为展示Banner广告的容器
-            }
-
-            override fun onSplashRenderFail(p0: CSJSplashAd?, p1: CSJAdError?) {
-                //广告渲染失败
-            }
-        }, 3000)
-    }
-
-    //展示开屏广告
-    fun showSplashAd(ad: CSJSplashAd?, container: ViewGroup) {
-        ad?.let {
-            it.setSplashAdListener(object : CSJSplashAd.SplashAdListener {
-                override fun onSplashAdShow(csjSplashAd: CSJSplashAd?) {
-                    //广告展示
-                    container.visibility = View.VISIBLE
-                }
-
-                override fun onSplashAdClick(csjSplashAd: CSJSplashAd?) {
-                }
-
-                override fun onSplashAdClose(csjSplashAd: CSJSplashAd?, p1: Int) {
-                    container.visibility = View.GONE
-                    container.removeAllViews()
-                }
-            })
-            if (container != null) {
-                it.showSplashView(container) //展示开屏广告
-            }
-        }
-    }
-
-    // 构造TTAdConfig
-    private fun buildConfig(): TTAdConfig {
-        return TTAdConfig.Builder()
-            .appId(dy_app_id) //APP ID
-            .appName("极简记工时") //APP Name
-            .useMediation(true)  //开启聚合功能
-            .debug(BuildConfig.IS_DEV)  //关闭debug开关
-            .themeStatus(0)  //正常模式  0是正常模式；1是夜间模式；
-            /**
-             * 多进程增加注释说明：V>=5.1.6.0支持多进程，如需开启可在初始化时设置.supportMultiProcess(true) ，默认false；
-             * 注意：开启多进程开关时需要将ADN的多进程也开启，否则广告展示异常，影响收益。
-             * CSJ、gdt无需额外设置，KS、baidu、Sigmob、Mintegral需要在清单文件中配置各家ADN激励全屏xxxActivity属性android:multiprocess="true"
-             */
-            .supportMultiProcess(false)  //不支持
-            .customController(getTTCustomController())  //设置隐私权
-            .build()
-    }
-    //设置隐私合规
-    private fun getTTCustomController(): TTCustomController? {
-        return object : TTCustomController() {
-            override fun isCanUseLocation(): Boolean {  //是否授权位置权限
-                return true
-            }
-
-            override fun isCanUsePhoneState(): Boolean {  //是否授权手机信息权限
-                return true
-            }
-
-            override fun isCanUseWifiState(): Boolean {  //是否授权wifi state权限
-                return true
-            }
-
-            override fun isCanUseWriteExternal(): Boolean {  //是否授权写外部存储权限
-                return true
-            }
-
-            override fun isCanUseAndroidId(): Boolean {  //是否授权Android Id权限
-                return true
-            }
-
-            override fun getMediationPrivacyConfig(): MediationPrivacyConfig? {
-                return object : MediationPrivacyConfig() {
-                    override fun isLimitPersonalAds(): Boolean {  //是否限制个性化广告
-                        return false
-                    }
-
-                    override fun isProgrammaticRecommend(): Boolean {  //是否开启程序化广告推荐
-                        return true
-                    }
-                }
-            }
-        }
-    }
-
 }
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
@@ -467,7 +260,7 @@ fun MainScreen(baseRepository: BaseRepository, activity: MainActivity) {
 
         if(!hasRegist) {
             WelcomeDialog(okAction = {
-                MainScope().launch {
+                activity.lifecycleScope.launch {
                     hasRegist = true
                     baseRepository.makeRegist()
                 }

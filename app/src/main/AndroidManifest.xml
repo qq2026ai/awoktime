@@ -69,21 +69,6 @@
                 android:resource="@xml/filepaths" />
         </provider>
 
-        <!-- 穿山甲 start================== -->
-        <provider
-            android:name="com.bytedance.sdk.openadsdk.TTFileProvider"
-            android:authorities="${applicationId}.TTFileProvider"
-            android:exported="false"
-            android:grantUriPermissions="true">
-            <meta-data
-                android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/pangle_file_paths" />
-        </provider>
-
-        <meta-data
-            android:name="plugin_toutiao"
-            android:value="" />
-
         <uses-library
             android:name="org.apache.http.legacy"
             android:required="false" />

@@ -88,6 +88,7 @@ class TimeworkAppConfigViewModel @Inject constructor(
 
     private fun makeSavedItem(): TimeworkAppConfigDTO {
         return editItem.copy(
+            dateSize = editItem.normalizedDateSize(),
             gmtCreate = MyDateTool.toDateTimeString(Date()),
             noticeDays = editItem.normalizedNoticeDays(),
             noticeTimes = editItem.normalizedNoticeTimes()

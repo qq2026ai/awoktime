@@ -59,8 +59,6 @@ import cn.jianyun.worktime.ui.component.nav.CenterRow
 import cn.jianyun.worktime.ui.component.nav.TwoColumnView
 import cn.jianyun.worktime.ui.component.nav.VerticalRow
 import cn.jianyun.worktime.ui.theme.ThemeColor
-import cn.jianyun.worktime.util.LinkText
-import cn.jianyun.worktime.util.toVipPage
 import kotlinx.coroutines.launch
 
 @Composable
@@ -103,12 +101,6 @@ fun TimeworkHomeView(navHostController: NavHostController) {
             })
 
             Row(verticalAlignment = Alignment.CenterVertically){
-                if(viewModel.baseRepository.shouldShowPurchaseHint()){
-                    LinkText("去广告", fontSize = 12.sp){
-                        toVipPage(navHostController)
-                    }
-                }
-
                 HeaderIcon(icon = IconFont.batchAdd){
                     navHostController.navigate(Router.BatchAdd.route)
                 }

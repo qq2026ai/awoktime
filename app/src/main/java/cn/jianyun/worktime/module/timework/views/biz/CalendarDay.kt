@@ -25,6 +25,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -61,6 +62,11 @@ import java.util.Calendar.*
 import java.util.Date
 
 private val AwardDotGreen = Color(0xFF45B649)
+
+@Composable
+private fun fixedCalendarDateFontSize(size: Int) = with(LocalDensity.current) {
+    (size.sp.value / fontScale).sp
+}
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -383,6 +389,7 @@ fun MonthCalendarView(state: MonthUiState.Success, dataModel: TimeworkMasterView
 
 @Composable
 fun DayCell(it: MonthDateInfo, modifier: Modifier = Modifier, dataModel: TimeworkMasterViewModel,  content: @Composable (Date) -> Unit) {
+    val dateFontSize = fixedCalendarDateFontSize(dataModel.appConfig.normalizedDateSize())
     Box(
         modifier = modifier.fillMaxHeight(),
         contentAlignment = Alignment.Center
@@ -425,8 +432,8 @@ fun DayCell(it: MonthDateInfo, modifier: Modifier = Modifier, dataModel: Timewor
                             modifier = Modifier
                                 .width(26.dp)
                                 .height(30.dp).wrapContentHeight(),
-                            fontSize = 16.sp,
-                            lineHeight = 12.sp,
+                            fontSize = dateFontSize,
+                            lineHeight = dateFontSize,
                             fontWeight = FontWeight.Medium,
                             textAlign = TextAlign.Center)
 

@@ -25,6 +25,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontVariation.weight
@@ -55,6 +56,10 @@ import cn.qsfty.worktime.component.CalendarHeaderView
 import cn.qsfty.worktime.component.VerticalView
 import java.util.Date
 
+@Composable
+private fun fixedCalendarDateFontSize(size: Int) = with(LocalDensity.current) {
+    (size.sp.value / fontScale).sp
+}
 
 @Composable
 fun TimeworkCalendarView(viewModel: TimeworkMasterViewModel){
@@ -123,6 +128,7 @@ fun TimeworkCalendarView(viewModel: TimeworkMasterViewModel){
 @Composable
 fun TimeworkCalendarBodyView(viewModel: TimeworkMasterViewModel,  content: @Composable (Date) -> Unit){
     val range = viewModel.getCurrentPeriodRange()
+    val dateFontSize = fixedCalendarDateFontSize(viewModel.appConfig.normalizedDateSize())
     val monthInfos = TimeworkPeriodTool.getPeriodInfo(
         beginDate = range.beginDate.parseDate(),
         endDate = range.endDate.parseDate(),
@@ -173,8 +179,8 @@ fun TimeworkCalendarBodyView(viewModel: TimeworkMasterViewModel,  content: @Comp
                                         modifier = Modifier
                                             .width(26.dp)
                                             .height(30.dp).wrapContentHeight(),
-                                        fontSize = 17.sp,
-                                        lineHeight = 12.sp,
+                                        fontSize = dateFontSize,
+                                        lineHeight = dateFontSize,
                                         fontWeight = FontWeight.Medium,
                                         textAlign = TextAlign.Center)
 

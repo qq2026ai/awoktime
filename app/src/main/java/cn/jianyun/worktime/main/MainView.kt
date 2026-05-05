@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import cn.jianyun.worktime.model.FormType
+import cn.jianyun.worktime.main.setting.vip.VipView
 import cn.jianyun.worktime.module.timework.views.TimeworkMainView
 import cn.jianyun.worktime.ui.component.nav.AppLogoView
 import cn.jianyun.worktime.ui.component.nav.CenterRow
@@ -42,6 +43,9 @@ fun MainView(navHostController: NavHostController, activity: Activity) {
                 }
             }
         }
+        else if(!appViewModel.baseRepository.isRealVip()){
+            VipView(settingViewModel = appViewModel, activity = activity)
+        }
         else{
             TimeworkMainView(navHostController = navHostController, activity = activity)
         }
@@ -53,5 +57,4 @@ fun MainView(navHostController: NavHostController, activity: Activity) {
 
     }
 }
-
 

@@ -87,16 +87,16 @@ fun VipView(settingViewModel: AppSettingViewModel, activity: Activity, navHostCo
                     }.padding(10.dp))
                 }
 
-                if(settingViewModel.baseRepository.appTipInfo.discount){
-                    GroupView(modifier=Modifier.clickable {
-                        var type = settingViewModel.baseRepository.appTipInfo.newPage
-                        if(type == "web" && settingViewModel.baseRepository.appTipInfo.url != ""){
-                            settingViewModel.baseRepository.openUrl(settingViewModel.baseRepository.appTipInfo.url)
+                GroupView {
+                    Text("说明：当前版本是无广告 SDK 的纯净会员版本，必须购买会员后才能使用。", fontSize = 13.sp, color = ThemeColor)
+                    Blank(6.dp)
+                    Text("如您还未登录，请先登录或注册账号，再完成购买，这样会员身份才能正常绑定到您的账号。", fontSize = 12.sp, color = Color.Gray)
+                    if(!settingViewModel.baseRepository.isLogin()){
+                        Blank(10.dp)
+                        LongCancelButton("登录 / 注册账号") {
+                            settingViewModel.purchaseFlag = true
+                            settingViewModel.formType = FormType("login")
                         }
-                    }) {
-                        Text("温馨提示:${settingViewModel.baseRepository.appTipInfo.message}",
-                            modifier=Modifier.padding(end = 10.dp),
-                            fontSize = 12.sp, color = settingViewModel.baseRepository.appTipInfo.showColor())
                     }
                 }
 

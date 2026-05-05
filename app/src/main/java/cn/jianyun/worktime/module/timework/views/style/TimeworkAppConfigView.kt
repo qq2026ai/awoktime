@@ -253,6 +253,10 @@ private fun TimeworkStyleConfigContent(
             viewModel.editItem = viewModel.editItem.copy(moneySize = it)
         })
 
+        AdderView(label = "日期字体大小", value = viewModel.editItem.normalizedDateSize(), minValue = 10, maxValue = 20, onValueChange = {
+            viewModel.editItem = viewModel.editItem.copy(dateSize = it)
+        })
+
         ColorSelectItemView(
             label = "请假背景色",
             value = viewModel.editItem.leaveBg,
